@@ -1,0 +1,39 @@
+body {
+	margin: 0;
+	padding: 48px 0px;
+	background-color: #AF3CB6;
+	color: white;
+	font-family: comic sans MS, helvetica, arial, sans-serif;
+}
+
+.no-margin {
+	margin: 0px !important;
+}
+
+.no-padding {
+	padding: 0px !important;
+}
+
+div#wrapper{
+	width: 80%;
+	min-width: 940px;
+	padding: 4px 0px 32px 0px;
+	margin: 0 auto;
+	background-color: #272727;
+	text-align: center;
+}
+
+div#wrapper div#bars{
+	width: 940px;
+	padding: 80px 0px;
+	margin: 0 auto;
+	background-color: #000000;
+}
+
+canvas#main {
+	display: block;
+	width: 940px;
+	height: 400px;
+	margin: 0 auto;
+	background-color: #2222B2;
+}

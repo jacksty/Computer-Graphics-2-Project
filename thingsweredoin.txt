@@ -1,0 +1,41 @@
+Required:
+
+Variance Shadow Maps
+Deferred Rendering
+Skybox or Environment Mapping
+Bump Mapping
+Billboards
+GPU Particle System
+Kinematics
+Noise
+
+Our Choice
+
+Collision
+Glow/HDR
+Advanced Lighting Models
+Projective Shadows
+
+David
+
+Glow/HDR
+Skybox
+Noise
+
+Christian
+
+Kinematics
+Advanced Lighting Models
+Variance Shadow Maps
+
+Tyler
+
+Projective Shadow
+Deferred Rendering
+Bump Mapping
+
+Casey
+
+GPU Particle System
+Collision
+Billboards
