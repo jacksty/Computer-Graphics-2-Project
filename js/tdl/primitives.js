@@ -1055,22 +1055,28 @@ tdl.primitives.CUBE_FACE_INDICES_ = [
  *         created plane vertices.
  */
 tdl.primitives.createCube = function(size) {
+    return tdl.primitives.createBox(size,size,size);
+}
+
+tdl.primitives.createBox = function(xsize,ysize,zsize){
     
     //jh
-    if( size === undefined )
-        size=1;
+    if( xsize === undefined )
+        xsize=ysize=zsize=1;
         
-  var k = size / 2;
-
+    var xk = xsize / 2;
+    var yk = ysize/2;
+    var zk = zsize/2;
+    
   var cornerVertices = [
-    [-k, -k, -k],
-    [+k, -k, -k],
-    [-k, +k, -k],
-    [+k, +k, -k],
-    [-k, -k, +k],
-    [+k, -k, +k],
-    [-k, +k, +k],
-    [+k, +k, +k]
+    [-xk, -yk, -zk],
+    [+xk, -yk, -zk],
+    [-xk, +yk, -zk],
+    [+xk, +yk, -zk],
+    [-xk, -yk, +zk],
+    [+xk, -yk, +zk],
+    [-xk, +yk, +zk],
+    [+xk, +yk, +zk]
   ];
 
   var faceNormals = [

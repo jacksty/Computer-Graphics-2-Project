@@ -100,7 +100,7 @@ tdl.framebuffers.getBackBuffer = function(canvas) {
  *                  Default: [tdl.gl.RGBA, tdl.gl.UNSIGNED_BYTE]
  *          depth: True if the FBO should have a depth buffer; false if not. 
  *                  Default: true
- *          depthastexture: True if a depth texture should be used for
+ *          depthtexture: True if a depth texture should be used for
  *                  the depth buffer; false if not. Default: false
  *          name: For debugging: A string. Default: ""
  */
@@ -133,7 +133,7 @@ tdl.framebuffers.Framebuffer = function(width, height, opts) {
         }
     }
     this.depth =  (opts.depth === undefined ) ? true : opts.depth;
-    this.depthastexture = (opts.depthtexture === undefined) ? false: opts.depthtexture;
+    this.use_depthtexture = (opts.depthtexture === undefined) ? false: opts.depthtexture;
     this.name = (opts.name === undefined) ? "" : opts.name;
     this.width = width;
     this.height = height;
@@ -407,11 +407,12 @@ tdl.framebuffers.Framebuffer.prototype.recoverFromLostContext = function() {
     //shortcut
     this.texture = this.textures[0];
     
-    var dtex;
-    var db = null;
+    var fb = tdl.gl.createFramebuffer();
+    tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, fb);
+   
     if (this.depth) {
-        if( this.depthastexture){
-            exts=["WEBGL_depth_texture","WEBKIT_WEBGL_depth_texture",
+        if( this.use_depthtexture){
+            var exts=["WEBGL_depth_texture","WEBKIT_WEBGL_depth_texture",
                     "MOZ_WEBGL_depth_texture"];
             var x;
             for(var i=0;i<exts.length && !x; ++i){
@@ -420,24 +421,32 @@ tdl.framebuffers.Framebuffer.prototype.recoverFromLostContext = function() {
             if(!x)
                 throw new Error("Framebuffer requested depth texture, but your system can't support it");
             
-            dtex = new tdl.textures.SolidTexture([0,0,0,0]);
-            dtex.debug = "fbo depth texture";
-            
-            this.initializeTexture(dtex,1,tdl.gl.DEPTH_STENCIL);
-            this.depthtexture=dtex;
+            this.depthtexture = new tdl.textures.SolidTexture([0,0,0,0]);
+            this.depthtexture.debug = "fbo depth texture";
+            this.initializeTexture(this.depthtexture,
+                tdl.gl.DEPTH_STENCIL,x.UNSIGNED_INT_24_8_WEBGL);
+            tdl.gl.framebufferTexture2D(
+                tdl.gl.FRAMEBUFFER,
+                tdl.gl.DEPTH_STENCIL_ATTACHMENT,
+                tdl.gl.TEXTURE_2D,
+                this.depthtexture.texture,
+                0);
         }
         else{
-            db = tdl.gl.createRenderbuffer();
-            tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, db);
+            //use a renderbuffer for depth buffer
+            this.depthbuffer = tdl.gl.createRenderbuffer();
+            tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, this.depthbuffer);
             tdl.gl.renderbufferStorage(
                 tdl.gl.RENDERBUFFER, tdl.gl.DEPTH_COMPONENT16, this.width, this.height);
+            tdl.gl.framebufferRenderbuffer(
+                tdl.gl.FRAMEBUFFER,
+                tdl.gl.DEPTH_ATTACHMENT,
+                tdl.gl.RENDERBUFFER,
+                this.depthbuffer);
             tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, null);
-            this.depthbuffer=db;
         }
     }
 
-    var fb = tdl.gl.createFramebuffer();
-    tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, fb);
     
     for(var i=0;i<this.formats.length;++i){
         tdl.gl.framebufferTexture2D(
@@ -448,24 +457,6 @@ tdl.framebuffers.Framebuffer.prototype.recoverFromLostContext = function() {
             0);
     }
     
-    
-    if (this.depth) {
-        if( this.wantdepthtexture){
-            tdl.gl.framebufferTexture2D(
-                tdl.gl.FRAMEBUFFER,
-                tdl.gl.DEPTH_STENCIL_ATTACHMENT,
-                tdl.gl.TEXTURE_2D,
-                dtex.texture,
-                0);
-        }
-        else{
-            tdl.gl.framebufferRenderbuffer(
-                tdl.gl.FRAMEBUFFER,
-                tdl.gl.DEPTH_ATTACHMENT,
-                tdl.gl.RENDERBUFFER,
-                db);    
-        }
-    }
     var status = tdl.gl.checkFramebufferStatus(tdl.gl.FRAMEBUFFER);
     if (status != tdl.gl.FRAMEBUFFER_COMPLETE && !tdl.gl.isContextLost()) {
         throw(new Error("Framebuffer setup error: " +
