@@ -14,7 +14,7 @@ Our Choice
 Collision
 Glow/HDR
 Advanced Lighting Models
-Projective Shadows
+Water
 
 David
 
@@ -30,7 +30,7 @@ Variance Shadow Maps
 
 Tyler
 
-Projective Shadow
+Water
 Deferred Rendering
 Bump Mapping
 
