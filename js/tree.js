@@ -13,13 +13,13 @@ function Tree(loader, pos, area, numTrees){
 	this.scale = [1, 1, 1];
 	this.opacity = 1;
 	this.spec = 16;
-	this.tree1 = new tdl.Texture2D(loader,"media/tree1.png");
+	this.tree1 = new tdl.Texture2D(loader, getInProgramPath("t", "tree1.png"));
 	this.tree1size = [5,5];
-	this.tree2 = new tdl.Texture2D(loader,"media/tree2.png");
+	this.tree2 = new tdl.Texture2D(loader, getInProgramPath("t", "tree2.png"));
 	this.tree2size = [5,5];
-	this.tree3 = new tdl.Texture2D(loader,"media/tree3.png");
+	this.tree3 = new tdl.Texture2D(loader, getInProgramPath("t", "tree3.png"));
 	this.tree3size = [5,5];
-	this.tree4 = new tdl.Texture2D(loader,"media/tree4.png");
+	this.tree4 = new tdl.Texture2D(loader, getInProgramPath("t", "tree4.png"));
 	this.tree4size = [5,5];
 	this.billboard = new Billboard({pos: this.pos, area: this.area, locations: this.trees, size: this.tree2size, texture: this.tree2, numbb: numTrees});
 }
