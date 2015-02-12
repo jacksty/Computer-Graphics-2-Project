@@ -32,6 +32,8 @@ vec2 split2ubyte(float a){
 void main()
 {
 	vec4 color = texture2D(tex, texpos);
+	if( color.a < 0.05 )
+        discard;
 	vec3 emissive = texture2D(emitTex, texpos).rgb;
 	gl_FragData[0] = vec4(split2ubyte(atan(normal.x, normal.z) / PI), split2ubyte(normal.y)); //spherical coordinates, split into 2 ubyte channels each
 	gl_FragData[1] = vec4(color.rgb, lightMode);

@@ -39,7 +39,8 @@ function main(){
     var shaders = [
                    ["buffer", "vsBuffer.glsl", "fsBuffer.glsl"],
                    ["deferred", "vsDeferred.glsl", "fsDeferred.glsl"],
-                   ["transparent", "vsBuffer.glsl", "fsTransparent.glsl"]
+                   ["transparent", "vsBuffer.glsl", "fsTransparent.glsl"],
+				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"]
                   ];
     loadShaders(loader, shaders);
     
@@ -55,8 +56,12 @@ function main(){
     });
     main.cameraMode = 3;
     main.entities = [];
+	main.billboards = [];
     main.transEnt = [];
-    main.tank = new Tank([0,0,-3,1]);
+	//main.billboards.push(new Tree(loader, [0,0,0], [1, 1], 10));
+	main.tree = new Tree(loader, [0,0,0,1], [100, 100], 1);
+	main.tree.addTree([[0,0,-10], [0,0,-1], [0,0,-5]]);
+	main.tank = new Tank([0,0,-3,1]);
     main.ground = new Mesh(loader, "ground.obj.mesh");
     main.ground.WM = tdl.scaling(20,20,20);
     main.amb = [0.05,0.05,0.05];
@@ -222,6 +227,11 @@ function drawOpaqueObjects(prog){
     for(var i = 0; i < main.entities.length; i++){
 		main.entities[i].draw(prog);
 	}
+	main.billboard.use();
+	main.billboard.setUniform("lightMode", 1);
+	main.cam.draw(main.billboard);
+	main.tree.draw(main.billboard);
+	
 }
 
 function drawTransparentObjects(prog){
