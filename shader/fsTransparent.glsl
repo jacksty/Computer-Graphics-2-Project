@@ -11,19 +11,40 @@ struct Light{
 
 uniform Light light[MAX_LIGHTS];
 uniform sampler2D tex;
+uniform sampler2D normalMap;
+uniform sampler2D specMap;
+uniform sampler2D emitTex;
+uniform mat4 worldMatrix;
 uniform vec4 cameraPos;
-uniform vec4 emissive;
 uniform vec3 ambient;
 uniform float alpha;
 varying vec4 worldPos;
-varying vec3 normal;
+varying vec3 oNormal;
+varying vec3 oTangent;
 varying vec2 texpos;
 
 void main()
 {
 	vec4 color = texture2D(tex, texpos);
+	if( color.a < 0.05 )
+        discard;
+	vec4 bump = texture2D(normalMap, texpos);
+	vec4 specmtl = texture2D(specMap, texpos);
+	vec4 emissive = texture2D(emitTex, texpos);
+	vec3 normal = oNormal;
+	
+	if(bump.a != 0.0){
+		bump = bump * 2.0 - 1.0;
+		vec3 binormal = normalize(cross(oTangent, oNormal));
+		mat3 tanToObj = mat3(oTangent.x, binormal.x, oNormal.x,
+							 oTangent.y, binormal.y, oNormal.y,
+							 oTangent.z, binormal.z, oNormal.z);
+		normal = bump.xyz * tanToObj;
+	}
+	normal = normalize((vec4(normal, 0.0) * worldMatrix).xyz);
+	
 	gl_FragColor.rbg = color.rbg * ambient;
-	gl_FragColor.a = color.a * alpha;
+	gl_FragColor.a = color.a;
 	
 	for(int i = 0; i < MAX_LIGHTS; ++i){
 		vec3 toLight = light[i].pos.xyz - light[i].pos.w * worldPos.xyz;
@@ -46,6 +67,6 @@ void main()
 		}
 		gl_FragColor.rbg += diff * light[i].col.rbg * color.rbg + spec * light[i].col.rbg;
 	}
-	gl_FragColor.rgb *= emissive.a;
-	gl_FragColor.rgb += emissive.rgb;
+	gl_FragColor.rgb += emissive.rgb * emissive.a;
+	gl_FragColor.a *= alpha;
 }

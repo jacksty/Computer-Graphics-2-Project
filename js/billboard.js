@@ -7,6 +7,7 @@
 	this.locations = opts.locations;
 	this.size = (opts.size !== undefined) ? opts.size : [1, 1];
 	this.texture = (opts.texture !== undefined) ? opts.texture : undefined;
+	
 	if (this.locations === undefined)
 	{
 		this.numbb = (opts.numbb !== undefined) ? opts.numbb : 1;
@@ -15,7 +16,7 @@
 	else if(this.locations.length === 1)
 	{
 		this.numbb = (opts.numbb !== undefined) ? opts.numbb : 1;
-		this.hasLocations = true;
+		this.hasLocations = false;
 	}
 	else
 	{

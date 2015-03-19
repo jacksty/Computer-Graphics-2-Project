@@ -31,7 +31,7 @@ Mesh.prototype.setup = function(loader, ab){
     var line;
     
     line = readLine();
-    if( line !== "mesh_3" )
+    if( line !== "mesh_4" )
         throw new Error("Not correct mesh header");
 
     var nv;
@@ -57,17 +57,30 @@ Mesh.prototype.setup = function(loader, ab){
             var idata = new Uint16Array(ab,idx,this.ni);
             idx += idata.byteLength;
         }
-        else if(lst[0] === "texture_file"){
+        else if(lst[0] === "texture_file")
         	this.texture = new tdl.Texture2D(loader, getInProjectPath("t",lst[1]));
-        }
+        else if(lst[0] === "normal_map")
+        	this.bump = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
+        else if(lst[0] === "specular_map")
+        	this.specmtl = new tdl.Texure2D(loader, getInProjectPath("t", lst[1]));
+        else if(lst[0] === "emissive_map")
+        	this.emitTex = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
         else{
             console.log("UNEX",lst,line.length,line);
             throw new Error("Unexpected");
         }
     }
     
+    if(this.lightMode === undefined)
+    	this.lightMode = 1;
     if( this.texture === undefined ) 
-    	this.texture = new tdl.SolidTexture([0,255,0,255]);
+    	this.texture = new tdl.SolidTexture([225,225,110,255]);
+    if(this.specmtl === undefined)
+    	this.specmtl = new tdl.textures.SolidTexture([255,255,255,32]);
+    if(this.emitTex === undefined)
+    	this.emitTex = new tdl.textures.SolidTexture([0,0,0,255]);
+    if(this.bump === undefined)
+    	this.bump = new tdl.textures.SolidTexture([255,255,255,0]);
     
     this.texture.setParameter(gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     this.texture.setParameter(gl.TEXTURE_MIN_FILTER, gl.LINEAR);
@@ -83,23 +96,17 @@ Mesh.prototype.setup = function(loader, ab){
 Mesh.prototype.draw = function(prog){
 	if(this.alpha !== 1.0)
     	prog.setUniform("alpha", this.alpha);
-	
-    if(this.lightMode === undefined)
-    	this.lightMode = 1;
-    if(this.specmtl === undefined)
-    	this.specmtl = [0,0,0,32];
-    if(this.emitTex === undefined)
-    	this.emitTex = new tdl.textures.SolidTexture([0,0,0,1]);
     
     gl.bindBuffer(gl.ARRAY_BUFFER,this.vbuff);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.ibuff);
     
-    prog.setVertexFormat("position",3,gl.FLOAT,"coords",2,gl.FLOAT,"norm",3,gl.FLOAT);
+    prog.setVertexFormat("position",3,gl.FLOAT,"coords",2,gl.FLOAT,"norm",3,gl.FLOAT,"tang",3,gl.FLOAT);
     
     prog.setUniform("tex", this.texture);
     prog.setUniform("lightMode", this.lightMode);
-    prog.setUniform("specmtl", this.specmtl);
-    prog.setUniform("emitTex", this.emitTex);
+    prog.setUniform("specMap", this.specmtl);
+    prog.setUniform("emitMap", this.emitTex);
+    prog.setUniform("normalMap", this.bump);
     
     gl.drawElements(gl.TRIANGLES,this.ni,gl.UNSIGNED_SHORT,0);
 }

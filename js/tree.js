@@ -22,6 +22,7 @@ function Tree(loader, pos, area, numTrees){
 	this.tree4 = new tdl.Texture2D(loader, getInProjectPath("t", "tree4.png"));
 	this.tree4size = [5,5];
 	this.billboard = new Billboard({pos: this.pos, area: this.area, locations: this.trees, size: this.tree2size, texture: this.tree2, numbb: numTrees});
+	
 }
 
 Tree.prototype.draw = function(prog){

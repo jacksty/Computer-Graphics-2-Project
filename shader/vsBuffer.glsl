@@ -1,18 +1,22 @@
+attribute vec2 coords;
 attribute vec3 position;
 attribute vec3 norm;
-attribute vec2 coords;
+attribute vec3 tang;
 uniform mat4 viewProjMat;
 uniform mat4 worldMatrix;
 uniform sampler2D tex;
-uniform vec4 cameraPos;
-varying vec2 texpos;
-varying vec3 normal;
 varying vec4 worldPos;
 varying vec4 camWorldPos;
+uniform vec4 cameraPos;
+varying vec3 oNormal;
+varying vec3 oTangent;
+varying vec2 texpos;
+
 
 void main()
 {
-	normal = normalize((worldMatrix * vec4(norm, 0.0)).xyz);
+	oNormal = normalize(norm);
+	oTangent = normalize(tang - dot(tang, oNormal) * oNormal);
 	texpos = coords;
 	vec4 p = vec4(position, 1.0);
 	p = p * worldMatrix;

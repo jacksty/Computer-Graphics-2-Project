@@ -22,12 +22,12 @@ function Tank(pos){
 
 Tank.initialize = function(loader){
 	Tank.mesh = [];
-	Tank.mesh.push(new Mesh(loader, "lefttread.obj.mesh"));
-	Tank.mesh.push(new Mesh(loader, "righttread.obj.mesh"));
-	Tank.mesh.push(new Mesh(loader, "tankbody.obj.mesh"));
-	Tank.mesh.push(new Mesh(loader, "tanktread.obj.mesh"));
-	Tank.mesh.push(new Mesh(loader, "tankturret.obj.mesh"));
-	Tank.mesh.push(new Mesh(loader, "tankgun.obj.mesh"));
+	Tank.mesh.push(new Mesh(loader, "lefttread.mesh"));
+	Tank.mesh.push(new Mesh(loader, "righttread.mesh"));
+	Tank.mesh.push(new Mesh(loader, "tankbody.mesh"));
+	Tank.mesh.push(new Mesh(loader, "tanktread.mesh"));
+	Tank.mesh.push(new Mesh(loader, "tankturret.mesh"));
+	Tank.mesh.push(new Mesh(loader, "tankgun.mesh"));
 }
 
 Tank.prototype.correctLen = function(){

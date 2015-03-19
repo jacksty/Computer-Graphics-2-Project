@@ -6,6 +6,8 @@ precision highp float;
 #define width winSizeVfov.x
 #define height winSizeVfov.y
 #define fov winSizeVfov.z
+#define LAMBERT 0.0
+#define BILLBOARD 2.0
 #define PHONG 1.0
 
 struct Light{
@@ -29,14 +31,6 @@ uniform vec3 winSizeVfov;
 uniform vec2 hitherYon;
 varying vec2 texCoord;
 
-/*
-vec2 unpack2(float p){
-	p = p * 4096.0;
-	vec2 unp = vec2(floor(p) / 4096.0, fract(p));
-	unp -= 0.5;
-	return unp * 2.0;
-}
-*/
 
 float merge2ubyte(vec2 a){
 	float b = a.x * 256.0 + a.y;
@@ -57,37 +51,51 @@ void main()
 {
 	gl_FragDepthEXT = texture2D(depth_texture, texCoord).r; 
 	vec3 color = texture2D(colorTex, texCoord).rgb;
-	vec3 specmtl = texture2D(specularTex, texCoord).rgb;
 	vec3 emissive = texture2D(emissiveTex, texCoord).rgb;
 	vec3 normal = unspherize(texture2D(normalTex, texCoord));
 	vec4 worldPos = vec4(-1.0 + gl_FragCoord.x / (width - 1.0) * 2.0, -1.0 + gl_FragCoord.y / (height - 1.0) * 2.0, hither + texture2D(depth_texture, texCoord).r * (yon - hither),1.0);
 	float lightMode = texture2D(colorTex, texCoord).w;
-	float roughness = texture2D(specularTex, texCoord).a;
 	float d = 1.0 / tan(fov);
 	worldPos.xy *= (worldPos.z / d);
 	worldPos *= invViewMatrix;
 	
 	gl_FragColor.a = 1.0;
-		
-	if(lightMode == PHONG){
+	
+	if(lightMode == LAMBERT || lightMode == BILLBOARD){
 		vec3 toLight = light.pos.xyz - light.pos.w * worldPos.xyz;
 		float d2 = dot(toLight, toLight);
 		toLight = normalize(toLight);
 		if(dot(toLight, light.dir) < light.col.a)
-			return;
-			
+			return;	
 		float diff = clamp(dot(toLight, normal), 0.0, 1.0);
-		float spec = 0.0;
-		if(diff > 0.0){
-			vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
-			vec3 R = normalize(reflect(-toLight, normal));
-			spec = clamp(dot(V, R), 0.0, 1.0);
-			spec = pow(spec, roughness);
-			float f = light.brightness/(light.atten.x + light.atten.y*sqrt(d2) + light.atten.z*d2);
-			f = clamp(f, 0.0, 1.0);
-			spec *= f / 2.0;
-			diff *= f;
+		float f = light.brightness/(light.atten.x + light.atten.y*sqrt(d2) + light.atten.z*d2);
+		f = clamp(f, 0.0, 1.0);
+		diff *= f;
+		gl_FragColor.rgb = emissive + color * ambient + diff * light.col.rgb * color;
+	}else {
+		vec3 specmtl = texture2D(specularTex, texCoord).rgb;
+		float roughness = texture2D(specularTex, texCoord).a * 255.0;
+		
+		if(lightMode == PHONG){
+			vec3 toLight = light.pos.xyz - light.pos.w * worldPos.xyz;
+			float d2 = dot(toLight, toLight);
+			toLight = normalize(toLight);
+			if(dot(toLight, light.dir) < light.col.a)
+				return;
+			
+			float diff = clamp(dot(toLight, normal), 0.0, 1.0);
+			float spec = 0.0;
+			if(diff > 0.0){
+				vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
+				vec3 R = normalize(reflect(-toLight, normal));
+				spec = clamp(dot(V, R), 0.0, 1.0);
+				spec = pow(spec, roughness);
+				float f = light.brightness/(light.atten.x + light.atten.y*sqrt(d2) + light.atten.z*d2);
+				f = clamp(f, 0.0, 1.0);
+				spec *= f / 2.0;
+				diff *= f;
+			}
+			gl_FragColor.rgb = emissive + color * ambient + diff * light.col.rbg * color + spec * specmtl * light.col.rgb;
 		}
-		gl_FragColor.rgb = emissive + color * ambient + diff * light.col.rbg * color + spec * specmtl * light.col.rbg;
 	}
 }

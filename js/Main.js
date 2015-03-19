@@ -58,11 +58,9 @@ function main(){
     main.entities = [];
 	main.billboards = [];
     main.transEnt = [];
-	//main.billboards.push(new Tree(loader, [0,0,0], [1, 1], 10));
-	main.tree = new Tree(loader, [0,0,0,1], [100, 100], 1);
-	main.tree.addTree([[0,0,-10], [0,0,-1], [0,0,-5]]);
+	main.billboards.push(new Tree(loader, [0,0,0], [1, 1], 10));
 	main.tank = new Tank([0,0,-3,1]);
-    main.ground = new Mesh(loader, "ground.obj.mesh");
+    main.ground = new Mesh(loader, "ground.mesh");
     main.ground.WM = tdl.scaling(20,20,20);
     main.amb = [0.05,0.05,0.05];
     main.lightattr = ["pos", "col", "dir", "atten", "brightness"];
@@ -85,6 +83,7 @@ function main(){
     });
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0.1]);
+    main.blankColor = new tdl.SolidTexture([0,0,0,0]);
     
     gl.clearColor(0,0,0,0);
     loader.finish();
@@ -99,12 +98,6 @@ function keyHandler(ev){
 	var r = Math.PI/180 * 2;
 	
 	switch(ev.keyCode){
-		case 52: toggleStereo(); break; //4
-		case 70: main.tank.shoot(); break; //f
-		case 32: ev.preventDefault(); //space
-			Asteroid.newRoid(); 
-			break;
-		
 		case 49: main.cameraMode = 1; break; //1
 		case 50: main.cameraMode = 2; //2
 			main.cam.right = main.tank.right;
@@ -153,7 +146,6 @@ function keyHandler(ev){
 		case 75: move("tiltg", 0, -r); break; //k
 		case 73: move("tiltg", 0, r); break; //i
 	}
-	move("", undefined, undefined);
 }
 
 function move(type, amtCam, amtAst){
@@ -190,7 +182,7 @@ function move(type, amtCam, amtAst){
 		main.tank.tiltGun(amtAst);
 	
 	if(main.cameraMode === 3)
-		main.cam.orientFromCOI(main.tank.pos, main.cam.up);
+		main.cam.orientFromCOI(main.tank.pos, [0,1,0,0]);
 	else if(main.cameraMode === 2){
 		main.cam.eye = [main.tank.pos[0], main.tank.pos[1], main.tank.pos[2], 1];
 		main.cam.eye = tdl.add(main.cam.eye, tdl.mul(main.tank.back, -.1));
@@ -224,14 +216,16 @@ function drawOpaqueObjects(prog){
     main.ground.draw(prog);
     prog.setUniform("worldMatrix", main.worldMat);
     main.tank.draw(prog);
-    for(var i = 0; i < main.entities.length; i++){
+    for(var i = 0; i < main.entities.length; i++)
 		main.entities[i].draw(prog);
-	}
 	main.billboard.use();
-	main.billboard.setUniform("lightMode", 1);
+	main.billboard.setUniform("lightMode", 2);
+	main.billboard.setUniform("normalMap", main.blankColor);
+	main.billboard.setUniform("emitMap", main.blankColor);
 	main.cam.draw(main.billboard);
-	main.tree.draw(main.billboard);
-	
+	for(var i = 0; i < main.billboards.length; ++i)
+		main.billboards[i].draw(main.billboard);
+	prog.use();
 }
 
 function drawTransparentObjects(prog){
