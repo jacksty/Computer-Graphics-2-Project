@@ -62,7 +62,7 @@ Mesh.prototype.setup = function(loader, ab){
         else if(lst[0] === "normal_map")
         	this.bump = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
         else if(lst[0] === "specular_map")
-        	this.specmtl = new tdl.Texure2D(loader, getInProjectPath("t", lst[1]));
+        	this.specmtl = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
         else if(lst[0] === "emissive_map")
         	this.emitTex = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
         else{
@@ -82,7 +82,8 @@ Mesh.prototype.setup = function(loader, ab){
     if(this.bump === undefined)
     	this.bump = new tdl.textures.SolidTexture([255,255,255,0]);
     
-    this.texture.setParameter(gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+    this.texture.setParameter(gl.TEXTURE_WRAP_S, gl.REPEAT);
+    this.texture.setParameter(gl.TEXTURE_WRAP_T, gl.REPEAT);
     this.texture.setParameter(gl.TEXTURE_MIN_FILTER, gl.LINEAR);
 
     this.vbuff = gl.createBuffer();

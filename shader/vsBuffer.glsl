@@ -16,7 +16,8 @@ varying vec2 texpos;
 void main()
 {
 	oNormal = normalize(norm);
-	oTangent = normalize(tang - dot(tang, oNormal) * oNormal);
+	oTangent = normalize(tang);
+	oTangent = normalize(oTangent - dot(oTangent, oNormal) * oNormal);
 	texpos = coords;
 	vec4 p = vec4(position, 1.0);
 	p = p * worldMatrix;

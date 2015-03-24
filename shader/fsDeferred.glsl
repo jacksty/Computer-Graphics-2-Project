@@ -3,9 +3,9 @@ precision highp float;
 #define PI 3.14159265359
 #define hither hitherYon.x
 #define yon hitherYon.y
-#define width winSizeVfov.x
-#define height winSizeVfov.y
-#define fov winSizeVfov.z
+#define width winSizeHalfVFOV.x
+#define height winSizeHalfVFOV.y
+#define halfFOV winSizeHalfVFOV.z
 #define LAMBERT 0.0
 #define BILLBOARD 2.0
 #define PHONG 1.0
@@ -27,7 +27,7 @@ uniform sampler2D emissiveTex;
 uniform mat4 invViewMatrix;
 uniform vec4 cameraPos;
 uniform vec3 ambient;
-uniform vec3 winSizeVfov;
+uniform vec3 winSizeHalfVFOV;
 uniform vec2 hitherYon;
 varying vec2 texCoord;
 
@@ -53,16 +53,16 @@ void main()
 	vec3 color = texture2D(colorTex, texCoord).rgb;
 	vec3 emissive = texture2D(emissiveTex, texCoord).rgb;
 	vec3 normal = unspherize(texture2D(normalTex, texCoord));
-	vec4 worldPos = vec4(-1.0 + gl_FragCoord.x / (width - 1.0) * 2.0, -1.0 + gl_FragCoord.y / (height - 1.0) * 2.0, hither + texture2D(depth_texture, texCoord).r * (yon - hither),1.0);
 	float lightMode = texture2D(colorTex, texCoord).w;
-	float d = 1.0 / tan(fov);
-	worldPos.xy *= (worldPos.z / d);
-	worldPos *= invViewMatrix;
+	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
+	float zLinear = hither * yon / (hither - yon) / (gl_FragDepthEXT + yon / (hither - yon));
+	vec3 cameraSpace = vec3(viewportSpace.xy * zLinear * tan(halfFOV), zLinear);
+	vec4 worldSpace = vec4(cameraSpace, 1.0) * invViewMatrix;
 	
 	gl_FragColor.a = 1.0;
 	
 	if(lightMode == LAMBERT || lightMode == BILLBOARD){
-		vec3 toLight = light.pos.xyz - light.pos.w * worldPos.xyz;
+		vec3 toLight = light.pos.xyz - light.pos.w * worldSpace.xyz;
 		float d2 = dot(toLight, toLight);
 		toLight = normalize(toLight);
 		if(dot(toLight, light.dir) < light.col.a)
@@ -77,7 +77,7 @@ void main()
 		float roughness = texture2D(specularTex, texCoord).a * 255.0;
 		
 		if(lightMode == PHONG){
-			vec3 toLight = light.pos.xyz - light.pos.w * worldPos.xyz;
+			vec3 toLight = light.pos.xyz - light.pos.w * worldSpace.xyz;
 			float d2 = dot(toLight, toLight);
 			toLight = normalize(toLight);
 			if(dot(toLight, light.dir) < light.col.a)
@@ -86,7 +86,7 @@ void main()
 			float diff = clamp(dot(toLight, normal), 0.0, 1.0);
 			float spec = 0.0;
 			if(diff > 0.0){
-				vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
+				vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
 				vec3 R = normalize(reflect(-toLight, normal));
 				spec = clamp(dot(V, R), 0.0, 1.0);
 				spec = pow(spec, roughness);

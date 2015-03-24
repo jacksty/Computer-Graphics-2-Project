@@ -117,8 +117,10 @@ function main(){
         		}
         		else if(tmp[0] === "map_Kd")
         			mdict[mname].map_Kd = tmp[1];
-        		else if(tmp[0] === "map_Bump")
+        		else if(tmp[0] === "map_Bump" || tmp[0] === "bump")
         			mdict[mname].map_Bump = tmp[1];
+        		else if(tmp[0] === "map_Ks")
+        			mdict[mname].map_Ks = tmp[1];
         	}
         }
         else if(L[0] === "usemtl"){
@@ -214,7 +216,9 @@ function main(){
     if(mdict[currmtl].map_Kd !== undefined)
     	ofp.write("texture_file " + mdict[currmtl].map_Kd + "\n");
     if(mdict[currmtl].map_Bump !== undefined)
-    	ofp.write("normal_map " + mdict[currmtl].map_Bump + "\n")
+    	ofp.write("normal_map " + mdict[currmtl].map_Bump + "\n");
+    if(mdict[currmtl].map_Ks !== undefined)
+    	ofp.write("specular_map " + mdict[currmtl].map_Ks + "\n");
     
     for(var i = 0; i < objects.length; ++i){
     	ofp.write("object " + objects[i] + " " + numVerts[i] + " " + xSum[i]/numVerts[i] + "," + ySum[i]/numVerts[i] + "," + zSum[i]/numVerts[i] + "\n");
