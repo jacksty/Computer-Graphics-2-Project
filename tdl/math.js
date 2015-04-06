@@ -220,6 +220,16 @@ tdl.math.randomInt = function(n) {
   return Math.floor(Math.random() * n);
 }
 
+/** Return a floating point number in range [a,b).
+ */
+tdl.math.randrange = function(a,b){
+    var v = a + tdl.pseudoRandom() * (b-a);
+    if( v === b )
+        v = a;      //slight possibility of this due to fp inexactness
+    return v;
+}
+
+
 /**
  * Converts degrees to radians.
  * @param {number} degrees A value in degrees.
@@ -386,8 +396,9 @@ tdl.math.dot = function(a, b) {
 };
 
 /**
- * Computes the cross product of two vectors; assumes both vectors have
- * three entries.
+ * Computes the cross product of two vectors; if a vec4 is sent in,
+ * we verify that the fourth component is zero, and the result
+ * will have four components as well.
  * @param {!tdl.math.Vector} a Operand vector.
  * @param {!tdl.math.Vector} b Operand vector.
  * @return {!tdl.math.Vector} The vector a cross b.
@@ -397,9 +408,18 @@ tdl.math.cross = function(a, b) {
         debugger;
         throw new Error("Cannot take cross product of mis-sized vectors");
     }
-    return [a[1] * b[2] - a[2] * b[1],
-          a[2] * b[0] - a[0] * b[2],
-          a[0] * b[1] - a[1] * b[0]];
+    
+    var cp = [
+            a[1] * b[2] - a[2] * b[1],
+            a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0]
+    ];
+    if( a.length === 3 && b.length === 3 )
+        return cp;
+    else{
+        cp[3]=0;
+        return cp;
+    }
 };
 
 /**
@@ -495,9 +515,15 @@ tdl.math.normalize = function(a) {
   if (n > 0.00001) {
     for (var i = 0; i < aLength; ++i)
       r[i] = a[i] / n;
-  } else {
-    r = [0,0,0];
   }
+  else{
+      debugger;
+      for(var i=0;i<aLength;++i)
+        r[i]=0;
+  }
+  //else {
+  //  r = [0,0,0];
+  //}
   return r;
 };
 
@@ -2679,6 +2705,30 @@ tdl.math.mul = function(){
     }
 }
 
+//jh added
+/** Compute reflection vector, like GLSL reflect function.
+ *  @param incoming The incoming vector
+ *  @param normal The **unit length** normal
+ * @return The reflection vector
+ */
+tdl.math.reflect = function(incoming, normal ){
+    return tdl.math.sub(incoming, tdl.math.mul(2*tdl.math.dot(incoming,normal),normal));
+}
+
+/**Compute reflection matrix: Reflect about the given plane
+    @param plane A vec4 with the plane A,B,C,D
+    @return The matrix
+*/
+tdl.math.reflectionMatrix = function(plane){
+    var Nx=plane[0],Ny=plane[1],Nz=plane[2],D=plane[3];
+    return [
+    -2 *Nx* Nx + 1      , -2* Nx *Ny     ,     -2 *Nx* Nz       ,         0 ,
+    -2 *Ny* Nx          , -2* Ny *Ny + 1 ,     -2 *Ny* Nz       ,         0, 
+    -2 *Nz* Nx          , -2 *Nz *Ny     ,     -2 *Nz* Nz + 1   ,         0, 
+    -2 *D* Nx           , -2 *D *Ny      ,     -2 *D *Nz        ,         1 
+    ];
+
+}
 //jh added for convenience
 tdl.math.identity = tdl.math.matrix4.identity;
 tdl.math.perspective = tdl.math.matrix4.perspective;

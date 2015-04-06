@@ -130,9 +130,15 @@ tdl.textures.TextureX.prototype.recoverFromLostContext = function() {
   }
 };
 
+/** Make this texture active on some texture unit. 
+    @param unit: The unit (integer) to use.
+*/
 tdl.textures.TextureX.prototype.bindToUnit = function(unit){
     //console.log("Put",this.name,"on",unit);
     
+    if( unit === undefined || unit < 0 )
+        throw new Error("Bad unit for bindToUnit");
+        
     if( tdl.framebuffers.active_fbo && tdl.framebuffers.active_fbo.texture === this )
         throw new Error("Attempt to use texture as input while attached to FBO");
         
@@ -209,25 +215,19 @@ tdl.textures.SolidTexture.prototype.recoverFromLostContext = function() {
   this.uploadTexture();
 };
 
-//tdl.textures.SolidTexture.prototype.bindToUnit = function(unit) {
-//  tdl.gl.activeTexture(tdl.gl.TEXTURE0 + unit);
-//  tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, this.texture);
-//};
-
 /**
-    * A color from an array of values texture. Note: If you want
+ * A color from an array of values texture. Note: If you want
  * a texture that does not have UNSIGNED_BYTE as its internal type,
  * you must pass in the appropriate TypedArray (any Javascript
  * Array will be converted to Uint8Array).
  * @constructor
- * @param data: Object with fields: {
- *      !{
+ * @param data: Object with fields: 
  *          width: number
  *          height: number: pixels:
- *          !Array.<number>} pixels: Values are integers from 0-255 (if unsigned byte)
+ *          !Array.<number> pixels: Values are integers from 0-255 (if unsigned byte)
  *                                  or arbitrary floats.
- *          format: Optional format (ALPHA, RGB, RGBA, LUMINANCE, LUMINANCE_ALPHA)
- *          type: Optional type (UNSIGNED_BYTE, FLOAT [if extension enabled])
+ *          format: Optional format (ALPHA, RGB, RGBA (default), LUMINANCE, LUMINANCE_ALPHA)
+ *          type: Optional type (UNSIGNED_BYTE (default), FLOAT [if extension enabled])
  */
 tdl.textures.ColorTexture = function(data, opt_format, opt_type) {
     if( opt_format !== undefined )
@@ -298,7 +298,6 @@ tdl.textures.ColorTexture.prototype.setData = function(data){
     this.uploadTexture();
 };
 
-//tdl.base.inherit(tdl.textures.ColorTexture, tdl.textures.TextureX);
 
 tdl.textures.ColorTexture.prototype.uploadTexture = function() {
     if( this.width === undefined || this.height === undefined )
@@ -331,60 +330,75 @@ tdl.textures.ColorTexture.prototype.recoverFromLostContext = function() {
   this.uploadTexture();
 };
 
-//tdl.textures.ColorTexture.prototype.bindToUnit = function(unit) {
-//  tdl.gl.activeTexture(tdl.gl.TEXTURE0 + unit);
-//  tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, this.texture);
-//};
-
-
 /**
  * @constructor
- * @param loader The Loader object 
+ * @param loader The Loader object. If src is an <img>, <canvas>, or null, then this may be null or undefined.
  * @param {{string|!Element}} src An HTML <img> element, an HTML <canvas> element, or the 
- *              URL of an image to load into the texture.
- * @param {function} opt_flipY True if the y coordinate should be flipped or false if not.
- *          Defaults to true.
- * @param {callback} Will be called when the texture is loaded and ready
- */
-tdl.textures.Texture2D = function(loader,src, opt_flipY, callback) {
-  "use strict";
-  //
+                URL of an image to load into the texture. This may be null or undefined; in that case,
+                the width and height specified in opts will be used to create an empty texture.
+   @param opts: A dictionary of options. These may be present:
+        -flipY: A boolan: True if y coordinate should be flipped. Default=true
+        -callback: A callback function to be executed when the texture is loaded and ready. Default: None
+        -width: Width of the texture. Required if URL is null; unused otherwise.
+        -height: Height of the texture. Required if URL is null; unused otherwise.
+        -format: Format of texture. Only used if URL is null. Default: gl.RGBA
+        -type: Type of texture. Only used if URL is null. Default: gl.UNSIGNED_BYTE
+*/        
+tdl.textures.Texture2D = function(loader,src, opts ){
+    // opt_flipY, callback) {
+    "use strict";
 
-  tdl.textures.TextureX.call(this, tdl.gl.TEXTURE_2D);
-  this.name="Texture2D("+src+")";
+    if( !opts )
+        opts={};
+        
+    tdl.textures.TextureX.call(this, tdl.gl.TEXTURE_2D);
   
-    if( opt_flipY === undefined )
-        opt_flipY=true;
-
+    this.name="Texture2D("+src+")";
+  
+    var opt_flipY = (opts.flipY !== undefined ) ? opts.flipY : true;
     this.flipY = opt_flipY;
+    this.format = ( opts.format ? opts.format : tdl.gl.RGBA );
+    this.type = ( opts.type ? opts.type : tdl.gl.UNSIGNED_BYTE );
+    
+    
     var that = this;
     var img;
 
-    if( src === undefined ){
+    if( src === undefined && (!opts.width || !opts.height) ){
         console.trace();
         throw new Error("Creating texture with src='undefined' (Did you forget the loader argument?)");
     }
 
-
-    // Handle dataURLs?
-    if (typeof src !== 'string') {
+    
+    // FIXME: Maybe handle dataURLs?
+    if( src === null || src === undefined ){
+        if( !opts.width || !opts.height )
+            throw new Error("Must specify opts.width and opts.height if src is null");
+        //we can't use image here for some odd reason... Probably because
+        //the browser doesn't like a "null" image with a width/height
+        this.img = document.createElement("canvas");
+        this.img.width=opts.width;
+        this.img.height=opts.height;
+        this.uploadTexture();
+    } 
+    else if (typeof src !== 'string') {
         img = src;              //canvas or existing image object
         this.loaded = true;
         this.img=img;
         this.uploadTexture();
-    } else {
+    }
+    else {      //image URL
         if( loader !== null && loader !== undefined && loader.type_ !== "Loader" ){
           throw new Error("First argument to Texture2D must be a loader");
         }
               
-        //put dummy texture in
-        this.loaded=false;
-        this.uploadTexture();
-
         if( loader.loadImage === undefined ){
           throw new Error("First argument to texture constructor must be a Loader");
         }
 
+        this.format = tdl.gl.RGBA;
+        this.type = tdl.gl.UNSIGNED_BYTE;
+        
         //remote URL or blob
         loader.loadImage(src,
             function(img){
@@ -397,9 +411,9 @@ tdl.textures.Texture2D = function(loader,src, opt_flipY, callback) {
                 var id = ctx.getImageData(0,0,cvs.width,cvs.height);
                 */
                 that.img=img;
-                that.updateTexture();
-                if( callback )
-                    callback(that,img);
+                that.uploadTexture();
+                if( opts.callback )
+                    opts.callback(that,img);
             }
         );
 
@@ -414,36 +428,46 @@ tdl.textures.isPowerOf2 = function(value) {
 };
 
 tdl.textures.Texture2D.prototype.uploadTexture = function() {
+    // TODO(gman): use texSubImage2D if the size is the same.
+    
     tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, this.texture);
-    tdl.gl.texParameteri(tdl.gl.TEXTURE_2D, tdl.gl.TEXTURE_MAG_FILTER, tdl.gl.LINEAR);
-    if (this.loaded) {
-        tdl.gl.pixelStorei(tdl.gl.UNPACK_FLIP_Y_WEBGL, this.flipY);
-        this.setTexture(this.img);
-    } else {
-        var pixel = new Uint8Array([255, 255, 255, 255]);
-        tdl.gl.texImage2D(
-            tdl.gl.TEXTURE_2D, 0, tdl.gl.RGBA, 1, 1, 0, 
-            tdl.gl.RGBA, tdl.gl.UNSIGNED_BYTE, pixel);
-        this.width=1;
-        this.height=1;
-    }
-};
+    tdl.gl.pixelStorei(tdl.gl.UNPACK_FLIP_Y_WEBGL, this.flipY);
 
-tdl.textures.Texture2D.prototype.setTexture = function(element) {
-  // TODO(gman): use texSubImage2D if the size is the same.
-    tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, this.texture);
-    if( element === undefined )
-        throw new Error("Cannot setTexture to undefined");
-    tdl.gl.texImage2D(tdl.gl.TEXTURE_2D, 0, tdl.gl.RGBA, tdl.gl.RGBA, tdl.gl.UNSIGNED_BYTE, element);
-    if (tdl.textures.isPowerOf2(element.width) &&
-        tdl.textures.isPowerOf2(element.height)) {
-            tdl.gl.texParameteri(tdl.gl.TEXTURE_2D, tdl.gl.TEXTURE_MIN_FILTER, tdl.gl.LINEAR_MIPMAP_LINEAR);
-            tdl.gl.generateMipmap(tdl.gl.TEXTURE_2D);
-    } else {
-        this.setParameter(tdl.gl.TEXTURE_WRAP_S, tdl.gl.CLAMP_TO_EDGE);
-        this.setParameter(tdl.gl.TEXTURE_WRAP_T, tdl.gl.CLAMP_TO_EDGE);
-        this.setParameter(tdl.gl.TEXTURE_MIN_FILTER, tdl.gl.LINEAR);
+    var element = this.img;
+    
+    if( element.width === 0 || element.height === 0 ){
+        throw new Error("Image with dimension zero");
     }
+    
+    tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, this.texture);
+    
+    if( element === undefined ){
+        debugger;
+        throw new Error("Cannot setTexture to undefined");
+    }
+        
+    //depth textures are special
+    if( this.format === tdl.gl.DEPTH_STENCIL || this.format === tdl.gl.DEPTH_COMPONENT ){
+        tdl.gl.texImage2D(tdl.gl.TEXTURE_2D,0,this.format,this.img.width,this.img.height,0,this.format,this.type,null);
+        tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_WRAP_S, tdl.gl.CLAMP_TO_EDGE);
+        tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_WRAP_T, tdl.gl.CLAMP_TO_EDGE);
+        tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_MIN_FILTER, tdl.gl.NEAREST);   
+        tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_MAG_FILTER, tdl.gl.NEAREST);
+    }
+    else{
+        tdl.gl.texImage2D(tdl.gl.TEXTURE_2D, 0, this.format, this.format, this.type, element);
+        tdl.gl.texParameteri(tdl.gl.TEXTURE_2D, tdl.gl.TEXTURE_MAG_FILTER, tdl.gl.LINEAR);
+        if (tdl.textures.isPowerOf2(element.width) &&
+            tdl.textures.isPowerOf2(element.height)) {
+                tdl.gl.texParameteri(tdl.gl.TEXTURE_2D, tdl.gl.TEXTURE_MIN_FILTER, tdl.gl.LINEAR_MIPMAP_LINEAR);
+                tdl.gl.generateMipmap(tdl.gl.TEXTURE_2D);
+        } else {
+            tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_WRAP_S, tdl.gl.CLAMP_TO_EDGE);
+            tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_WRAP_T, tdl.gl.CLAMP_TO_EDGE);
+            tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,tdl.gl.TEXTURE_MIN_FILTER, tdl.gl.LINEAR);    
+        }
+    }
+    
     this.width = element.width;
     this.height = element.height;
   
@@ -452,11 +476,6 @@ tdl.textures.Texture2D.prototype.setTexture = function(element) {
     for(var p in this.params){
       tdl.gl.texParameteri(tdl.gl.TEXTURE_2D,p,this.params[p]);
     }
-};
-
-tdl.textures.Texture2D.prototype.updateTexture = function() {
-  this.loaded = true;
-  this.uploadTexture();
 };
 
 tdl.textures.Texture2D.prototype.recoverFromLostContext = function() {
@@ -504,14 +523,17 @@ tdl.base.inherit(tdl.textures.ExternalTexture2D, tdl.textures.ExternalTexture);
  * @constructor
  * @param loader The loader object to use (ignored if
  *      no image urls are specified).
- * @param opts: A dictionary with exactly one of these items:
- *      urls: A list of strings giving images to load
- *          for each side of the cubemap. Images 
- *          must be in the order positive_x, negative_x positive_y,
- *          negative_y, positive_z, negative_z 
+ * @param opts: A dictionary. You can specify a cubemap to be loaded from
+ *          several image files or you can create an empty cubemap.
+ *      For an empty cubemap, you must specify size and you may specify format and/or type
+ *      For an image-based cubemap, you must specify px, nx, py, ny, pz, nz: These are
+ *          the URL's of the images.
+ *      If you specify both URL's and size, then size wins out and an empty cubemap is created.
  *      size: A size (for empty cubemaps)  In that case,
  *          we allocate textures but don't upload data.
  *          This is useful for cube framebuffer objects.
+ *      format: If size is given, this will be the format of the CubeMap (ex: gl.RGBA)
+ *      type: If size is given, this will be the type of the cubemap (ex: gl.UNSIGNED_BYTE)
  */
 tdl.textures.CubeMap = function(loader,opts) {
     
@@ -520,14 +542,22 @@ tdl.textures.CubeMap = function(loader,opts) {
     if( opts === undefined ){
         throw new Error("Must pass options to CubeMap constructor");
     }
+
+    //if( opts.urls === undefined && opts.size === undefined )
+    //    throw new Error("Must specify urls or size");
+    //if( opts.urls !== undefined && opts.size !== undefined )
+    //    throw new Error("Cannot specify both urls and size");
+    //if( opts.urls ){
+    //    if( opts.format || opts.type )  
+    //        throw new Error("Cannot specify format or type when loading images");
+    //}
     
-    var urls=opts.urls;
-    var imgsize = opts.size;
+        
+    this.urls = [opts.px,opts.nx,opts.py,opts.ny,opts.pz,opts.nz];
+    this.width = this.height = this.size = opts.size;
+    this.format = (opts.format ? opts.format : tdl.gl.RGBA );
+    this.type = (opts.type ? opts.type : tdl.gl.UNSIGNED_BYTE );
     
-    if( urls && imgsize )
-        throw new Error("Cannot specify both size and urls");
-    if( !urls && !imgsize )
-        throw new Error("Must specify urls or size");
         
     tdl.textures.init_(gl);
     var that=this;
@@ -555,14 +585,15 @@ tdl.textures.CubeMap = function(loader,opts) {
     this.setParameter(tdl.gl.TEXTURE_WRAP_S, tdl.gl.CLAMP_TO_EDGE);
     this.setParameter(tdl.gl.TEXTURE_WRAP_T, tdl.gl.CLAMP_TO_EDGE);
     
-    //holds the raw image data for each side of the cubemap
-    //plus dimensions
+    //holds the image data for each side of the cubemap
     this.facedata = [];
 
     function makeCallback(idx){
         return function(img){
             //console.log("Got faces[",idx,"]");
             that.facedata[idx]=img;
+            
+            //if we have all six faces, we may now upload the texture
             for(var i=0;i<6;++i){
                 if( that.facedata[i] === undefined )
                     return;
@@ -571,39 +602,28 @@ tdl.textures.CubeMap = function(loader,opts) {
         }
     }
   
-    if( urls === undefined ){
-        //initialize all 6 sides to null
-        this.texsize=imgsize;
+    if( this.size !== undefined ){
+        //initialize all 6 sides to empties
         for(var i=0;i<6;++i){
-            tdl.gl.texImage2D(tdl.textures.CubeMap.faceTargets[i],
-                0, tdl.gl.RGBA, imgsize,imgsize, 0, tdl.gl.RGBA, tdl.gl.UNSIGNED_BYTE, null);
+            var ff = makeCallback(i);
+            var cvs = document.createElement("canvas");
+            cvs.width = this.width;
+            cvs.height = this.height;
+            ff(cvs);
+            //tdl.gl.texImage2D(tdl.textures.CubeMap.faceTargets[i],
+            //    0, this.format, this.width, this.height, 0, this.format, this.type, null);
         }
-        this.size = imgsize;
     }
     else {
-        this.numUrls = urls.length;
-        if( this.numUrls !== 6 ){
-            throw new Error("Must give 6 images for cubemap constructor");
-        }
-        for (var ff = 0; ff < urls.length; ++ff) {
-            loader.loadImage(urls[ff], makeCallback(ff));
+        for (var ff = 0; ff < this.urls.length; ++ff) {
+            if( this.urls[ff] === undefined )
+                throw new Error("Must give 6 images for cubemap constructor");
+            loader.loadImage(this.urls[ff], makeCallback(ff));
         }
     }
 };
 
 tdl.base.inherit(tdl.textures.CubeMap, tdl.textures.TextureX);
-
-/**
- * Check if all faces are loaded.
- * @return {boolean} true if all faces are loaded.
-tdl.textures.CubeMap.prototype.loaded = function() {
-  for (var ff = 0; ff < this.faces.length; ++ff) {
-    if (!this.faces[ff].loaded) {
-      return false;
-    }
-  }
-  return true;
-};*/
 
 /*
 tdl.textures.clampToMaxSize = function(element, maxSize) {
@@ -638,13 +658,17 @@ tdl.textures.CubeMap.prototype.uploadTextures = function() {
         tdl.gl.texImage2D(
               target, 0, tdl.gl.RGBA, tdl.gl.RGBA, tdl.gl.UNSIGNED_BYTE,
               this.facedata[faceIndex]);
-              //tdl.textures.clampToMaxSize(
-              //    face.img, tdl.gl.tdl.textures.maxCubeMapSize));
     }
     var genMips = false;
     var faceImg = this.facedata[0];
     this.width=faceImg.width;
     this.height=faceImg.height;
+    this.size = this.width;
+    
+    if( this.width !== this.height ){
+        throw new Error("Cubemap must be square");
+    }
+    
     if (this.facedata.length === 6) {
         genMips = tdl.textures.isPowerOf2(faceImg.width) &&
                 tdl.textures.isPowerOf2(faceImg.height);
@@ -667,7 +691,7 @@ tdl.textures.CubeMap.prototype.recoverFromLostContext = function() {
 };
 
 /** Return an arraybuffer with the raw pixel data for the corresponding face
- * @param face 0-5: The face (+x,-x,+y,-y,+z,-z)
+ * @param face 0-5: The face (+x,-x,+y,-y,+z,-z). This function is primarily for debugging.
 */
 tdl.textures.CubeMap.prototype.getPixdata = function(side){
     if(tdl.textures.CubeMap.iprog === undefined ){
@@ -734,15 +758,22 @@ tdl.textures.CubeMap.prototype.getPixdata = function(side){
     return pixdata;
 }
 
-//note that this canvas will be upside down
-//since gl and canvas store image data with opposite y directions
+
+/** Get a canvas with the image contained in the given face of the cubemap. 
+    Note that this canvas will be upside down
+    since gl and canvas store image data with opposite y directions.
+    This function is primarily for debugging.
+    @param side: Value 0...5 telling which side to get.*/ 
 tdl.textures.CubeMap.prototype.getCanvas = function(side)
 {
     var pix = this.getPixdata(side);
+    if( this.cvs === undefined ){
+        this.cvs = document.createElement("canvas");
+        this.cvs.width=this.size;
+        this.cvs.height=this.size;
+    }
     
-    var cvs = document.createElement("canvas");
-    cvs.width=this.size;
-    cvs.height=this.size;
+    var cvs = this.cvs;
     var ctx = cvs.getContext("2d");
     var id = ctx.createImageData(this.size,this.size);
     

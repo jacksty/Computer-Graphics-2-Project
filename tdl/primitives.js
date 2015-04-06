@@ -583,48 +583,58 @@ tdl.primitives.combineBuffers = function(X,fmt,M){
         numfloats += fmt[i][1];
     }
     
+    var need_tangents=false;
+    for(var i=0;i<fmt.length;++i){
+        if( fmt[i][0] === "tangent" )
+            need_tangents=true;
+    }
+    
+    if( need_tangents && X.tangent === undefined ){
+        tdl.primitives.addTangentsAndBinormals(X);
+    }
+    
+    //FIXME: This is inefficient.
+    
     var A=new Float32Array( ne * numfloats );
     var idx=0;
     for(var i=0;i<ne;++i){
         for( var j=0;j<fmt.length;++j){
             var which = fmt[j][0];
-            var number = fmt[j][1];
+            var numcomponents = fmt[j][1];
             
-            if( which === "position" ){
-                var p = X.position.getElement(i);
+            if( numcomponents > 4 ){
+                throw new  Error("Too many components");
+            }
+            
+            var AA = X[which];
+            if(AA===undefined){
+                console.log(X);
+                throw new Error("Bad: "+which);
+            }
+                
+            p = AA.getElement(i);
+            
+            if( which === "position"){
                 p[3]=1.0;
                 p = tdl.mul(p,M);
-                A[idx++] = p[0];
-                A[idx++] = p[1];
-                if( number > 2 )
-                    A[idx++] = p[2];
-                if( number > 3 )
-                    A[idx++] = 1.0;
             }
-            else if( which === "texCoord" ){
-                p = X.texCoord.getElement(i);
-                A[idx++] = p[0];
-                A[idx++] = p[1];
-                if( number > 2 )
-                    A[idx++] = 0;
-                if( number > 3 )
-                    A[idx++] = 1;
-            }
-            else if( which === "normal" ){
-                p = X.normal.getElement(i);
+            else if( which === "normal" || which === "tangent" || which === "binormal" ){
                 p[3]=0.0;
                 p = tdl.mul(p,M);
-                A[idx++] = p[0];
-                A[idx++] = p[1];
-                A[idx++] = p[2];
-                if( number > 3 )
-                    A[idx++] = 0;
             }
-            else{
-                throw new Error("Bad specifier: "+which)
+            else if( which === "texCoord" ){
+                p[2] = 0.0;
+                p[3] = 1.0;
+            }
+            else
+                throw new Error("Bad");
+                
+            for(var k=0;k<numcomponents;++k){
+                A[idx++] = p[k];
             }
         }
     }
+    
     ne = X.indices.numElements;
     var I = new Uint16Array(ne*3);
     idx=0;
@@ -634,7 +644,10 @@ tdl.primitives.combineBuffers = function(X,fmt,M){
         I[idx++] = p[1];        
         I[idx++] = p[2];
     }
-    return { vdata: A, idata: I, numverts: X.position.numElements, numindices: X.indices.numElements*3 };
+    return { vdata: A, 
+            idata: I,
+            numverts: X.position.numElements, 
+            numindices: X.indices.numElements*3 };
 }
 
 /**
@@ -850,7 +863,7 @@ tdl.primitives.createCresent = function(
 /**
  * Creates XZ plane vertices.
  * The created plane has position, normal and uv streams.
- *
+ * 
  * @param {number} width Width of the plane.
  * @param {number} depth Depth of the plane.
  * @param {number} subdivisionsWidth Number of steps across the plane.
@@ -1040,8 +1053,8 @@ tdl.primitives.createPlane = function(
 tdl.primitives.CUBE_FACE_INDICES_ = [
   [3, 7, 5, 1], // right
   [6, 2, 0, 4], // left
-  [6, 7, 3, 2], // ??
-  [0, 1, 5, 4], // ??
+  [6, 7, 3, 2], // top
+  [0, 1, 5, 4], // bottom
   [7, 6, 4, 5], // front
   [2, 3, 1, 0]  // back
 ];
@@ -1058,74 +1071,104 @@ tdl.primitives.createCube = function(size) {
     return tdl.primitives.createBox(size,size,size);
 }
 
-tdl.primitives.createBox = function(xsize,ysize,zsize){
+
+//omit is a list of left, right, top, bottom, front, back entries;
+//if the value is true: Omit that side of the box
+//Ex: createBox(1,1,1, ["left","right"] )
+tdl.primitives.createBox = function(xsize,ysize,zsize,omit,
+    flip_normals){
     
     //jh
     if( xsize === undefined )
         xsize=ysize=zsize=1;
         
+    if( omit === undefined )
+        omit=[];
+    
+    var oo=[];
+    for(var i=0;i<omit.length;++i){
+        if( omit[i] === "right" ) oo[0]=true;
+        if( omit[i] === "left" ) oo[1]=true;
+        if( omit[i] === "top" ) oo[2]=true;
+        if( omit[i] === "bottom" ) oo[3]=true;
+        if( omit[i] === "front" ) oo[4]=true;
+        if( omit[i] === "back" ) oo[5]=true;
+    }
+        
     var xk = xsize / 2;
     var yk = ysize/2;
     var zk = zsize/2;
     
-  var cornerVertices = [
-    [-xk, -yk, -zk],
-    [+xk, -yk, -zk],
-    [-xk, +yk, -zk],
-    [+xk, +yk, -zk],
-    [-xk, -yk, +zk],
-    [+xk, -yk, +zk],
-    [-xk, +yk, +zk],
-    [+xk, +yk, +zk]
-  ];
+    var cornerVertices = [
+        [-xk, -yk, -zk],
+        [+xk, -yk, -zk],
+        [-xk, +yk, -zk],
+        [+xk, +yk, -zk],
+        [-xk, -yk, +zk],
+        [+xk, -yk, +zk],
+        [-xk, +yk, +zk],
+        [+xk, +yk, +zk]
+    ];
 
-  var faceNormals = [
-    [+1, +0, +0],
-    [-1, +0, +0],
-    [+0, +1, +0],
-    [+0, -1, +0],
-    [+0, +0, +1],
-    [+0, +0, -1]
-  ];
+    var faceNormals = [
+        [+1, +0, +0],
+        [-1, +0, +0],
+        [+0, +1, +0],
+        [+0, -1, +0],
+        [+0, +0, +1],
+        [+0, +0, -1]
+    ];
 
-  var uvCoords = [
-    [1, 0],
-    [0, 0],
-    [0, 1],
-    [1, 1]
-  ];
-
-  var numVertices = 6 * 4;
-  var positions = new tdl.primitives.AttribBuffer(3, numVertices);
-  var normals = new tdl.primitives.AttribBuffer(3, numVertices);
-  var texCoords = new tdl.primitives.AttribBuffer(2, numVertices);
-  var indices = new tdl.primitives.AttribBuffer(3, 6 * 2, 'Uint16Array');
-
-  for (var f = 0; f < 6; ++f) {
-    var faceIndices = tdl.primitives.CUBE_FACE_INDICES_[f];
-    for (var v = 0; v < 4; ++v) {
-      var position = cornerVertices[faceIndices[v]];
-      var normal = faceNormals[f];
-      var uv = uvCoords[v];
-
-      // Each face needs all four vertices because the normals and texture
-      // coordinates are not all the same.
-      positions.push(position);
-      normals.push(normal);
-      texCoords.push(uv);
-
+    if( flip_normals ){
+        for(var i=0;i<faceNormals.length;++i){
+            faceNormals[i] = tdl.mul(-1,faceNormals[i]);
+        }
     }
-    // Two triangles make a square face.
-    var offset = 4 * f;
-    indices.push([offset + 0, offset + 1, offset + 2]);
-    indices.push([offset + 0, offset + 2, offset + 3]);
-  }
+    
+    var uvCoords = [
+        [1, 0],
+        [0, 0],
+        [0, 1],
+        [1, 1]
+    ];
 
-  return {
-    position: positions,
-    normal: normals,
-    texCoord: texCoords,
-    indices: indices};
+    var numVertices = 6 * 4;
+    var positions = new tdl.primitives.AttribBuffer(3, numVertices);
+    var normals = new tdl.primitives.AttribBuffer(3, numVertices);
+    var texCoords = new tdl.primitives.AttribBuffer(2, numVertices);
+    var indices = new tdl.primitives.AttribBuffer(3, 6 * 2, 'Uint16Array');
+
+    for (var f = 0; f < 6; ++f) {
+            
+        var faceIndices = tdl.primitives.CUBE_FACE_INDICES_[f];
+        for (var v = 0; v < 4; ++v) {
+            var position = cornerVertices[faceIndices[v]];
+            var normal = faceNormals[f];
+            var uv = uvCoords[v];
+
+            // Each face needs all four vertices because the normals and texture
+            // coordinates are not all the same.
+            positions.push(position);
+            normals.push(normal);
+            texCoords.push(uv);
+        }
+        // Two triangles make a square face.
+        if( oo[f] ){
+        }
+        else{
+            var offset = 4 * f;
+            indices.push([offset + 0, offset + 1, offset + 2]);
+            indices.push([offset + 0, offset + 2, offset + 3]);
+        }
+    }
+
+    return {
+        position: positions,
+        normal: normals,
+        texCoord: texCoords,
+        indices: indices
+    };
+    
 };
 
 
@@ -1553,6 +1596,59 @@ tdl.primitives.createDisc = function(
     indices: indices};
 };
 
+//union together all the primitives specified as arguments
+//Arguments: prim1, tmatrix1, prim2,tmatrix2, ...
+tdl.primitives.union = function(){
+    
+    var rv = {};
+
+    var nv=0;
+    var ni=0;
+    for(var i=0;i<arguments.length;i+=2){
+        var Q = arguments[i];
+        nv += Q.position.numElements;
+        ni += Q.indices.numElements;
+    }
+    
+    rv.position = new tdl.primitives.AttribBuffer(3, nv);
+    rv.normal = new tdl.primitives.AttribBuffer(3, nv);
+    rv.texCoord = new tdl.primitives.AttribBuffer(2, nv);
+    rv.indices = new tdl.primitives.AttribBuffer( 3, ni, 'Uint16Array');
+
+    var vi=0;
+    var vcounter=0;
+    var icounter=0;
+    for(var i=0;i<arguments.length;i+=2){
+        var Q = arguments[i];
+        var M = arguments[i+1];
+        for(var j=0;j<Q.position.numElements;++j){
+            var tmp = [].concat(Q.position.getElement(j));
+            tmp[3]=1.0;
+            tmp = tdl.mul(tmp,M);
+            rv.position.setElement(vi,tmp.slice(0,3));
+            var tmp = [].concat(Q.normal.getElement(j));
+            tmp[3]=0.0;
+            tmp = tdl.mul(tmp,M);
+            rv.normal.setElement(vi,tmp.slice(0,3));
+            var tmp = [].concat(Q.texCoord.getElement(j));
+            rv.texCoord.setElement(vi,tmp);
+            vi++;
+        }
+        for(var j=0;j<Q.indices.numElements;++j){
+            var tmp = Q.indices.getElement(j);
+            tmp[0]+=vcounter;
+            tmp[1]+=vcounter;
+            tmp[2]+=vcounter;
+            rv.indices.setElement( icounter+j, tmp );
+        }
+        icounter += Q.indices.numElements;
+        vcounter += Q.position.numElements;
+    }
+    return rv;
+}
+            
+            
+    
 /**
  * Interleaves vertex information into one large buffer
  * @param {Array of <string, tdl.primitives.AttribBuffer>}
@@ -1578,20 +1674,22 @@ tdl.primitives.interleaveVertexData = function(vertexDataArray) {
   return vertexData;
 };
 
-//rawdata will be the result of tdl.primitives.createXYZ()
-//fmt is a dictionary with keys from the set {position,texCoord,normal}
-//  and values being either a dictionary with entries for number and name
-//  or a GLSL-style attribute variable declaration as a string.
-//  Ex: if the shader declares "attribute vec2 a_texc; attribute vec3 a_pos" then
-//  fmt should be { position: {name: "a_pos", number: 3} , texCoord: {name: "a_texc", number: 2} }
-//  Alternately, fmt could be:
-//      { position: "vec3 a_pos", texCoord: "vec2 a_texc" }
-//M is a transformation matrix to be applied to all the points. (optional)
-//uniforms is a list of pairs: Uniforms to set+their values (optional)
-//Example: Create a simple quad over the whole screen (a "Unit Square"):
-// var m = new tdl.primitives.Mesh(
-//      tdl.primitives.createPlane( 2,2,1,1 ), 
-//      { position: {name: "a_pos", number: 3} } );
+/** Creates a simple Mesh object.
+    @param rawdata The return value from one of tdl.primitives.create***()
+    @param fmt The format for the setVertexFormat() call. 
+        A dictionary with one or more keys from {position,normal,texCoord,tangent}
+        and values being strings like "vec3 a_position".
+    @param M A transformation matrix to be applied to all points when
+        placed in the vertex buffer
+    @param uniforms A dictionary of uniforms to be set at draw time.
+Example: Create a quad over the whole screen (a "Unit Square"):
+    var m = new tdl.primitives.Mesh(
+        tdl.primitives.createPlane( 2,2,1,1 ), 
+        { position: "vec3 a_position" },
+        tdl.identity(),
+        { texture: new tdl.SolidTexture([...]) }
+    );
+*/
 tdl.primitives.Mesh = function(rawdata,fmt,M,uniforms){
     this.formatarray=[];
     var xfmt = [];
@@ -1611,7 +1709,7 @@ tdl.primitives.Mesh = function(rawdata,fmt,M,uniforms){
             v = { name: tmp[1], number: n };
         }
         
-        if(k === "position" || k === "normal" || k === "texCoord"  ){
+        if(k === "position" || k === "normal" || k === "texCoord" || k === "tangent" || k === "binormal"){
             this.formatarray.push( v.name, v.number, tdl.gl.FLOAT);
             xfmt.push( [k,v.number] );
         }
@@ -1628,8 +1726,8 @@ tdl.primitives.Mesh = function(rawdata,fmt,M,uniforms){
     
     
     var tmp = tdl.primitives.combineBuffers(rawdata,xfmt,M);
-    this.count = tmp.numindices;
-    
+    this.icount = tmp.numindices;
+    this.vcount = tmp.numverts;
     
     this.vbuff = tdl.gl.createBuffer();
     tdl.gl.bindBuffer(tdl.gl.ARRAY_BUFFER,this.vbuff);
@@ -1650,9 +1748,22 @@ tdl.primitives.Mesh.prototype.draw = function(prog){
     tdl.gl.bindBuffer(tdl.gl.ARRAY_BUFFER,this.vbuff);
     tdl.gl.bindBuffer(tdl.gl.ELEMENT_ARRAY_BUFFER,this.ibuff);
     prog.setVertexFormat.apply(prog, this.formatarray );
-    tdl.gl.drawElements(tdl.gl.TRIANGLES, this.count, tdl.gl.UNSIGNED_SHORT, 0);
+    tdl.gl.drawElements(tdl.gl.TRIANGLES, this.icount, tdl.gl.UNSIGNED_SHORT, 0);
 }
 
+tdl.primitives.Mesh.prototype.draw_as_points = function(prog){
+    
+    if(this.uniforms){
+        for( var k in this.uniforms ){
+            prog.setUniform(k,this.uniforms[k]);
+        }
+    }
+    tdl.gl.bindBuffer(tdl.gl.ARRAY_BUFFER,this.vbuff);
+    prog.setVertexFormat.apply(prog, this.formatarray );
+    tdl.gl.drawArrays(tdl.gl.POINTS, 0, this.vcount);
+}
+
+/*
 //rawData = result of one of the createXYZ() functions.
 tdl.primitives.toObj = function(rawdata){
     var lst=[];

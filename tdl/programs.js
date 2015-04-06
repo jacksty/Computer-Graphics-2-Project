@@ -162,7 +162,7 @@ tdl.programs.Program.prototype.process_loaded_file = function(loader,which,url,f
         var m = rex.exec(lines[i]);
         if( m ){
             var url2 = m[1];
-            console.log("include of",url2);
+            //console.log("include of",url2);
             if( this.sources[url2] === undefined ){
                 loader.loadTextFile(url2,make_callback(url2));
             }
@@ -752,11 +752,13 @@ tdl.programs.Program.prototype.setUniform = function(uniform, value, ignoremissi
     //jh added
     if( value === undefined ){
         //console && console.trace && console.trace();
+        debugger;
         throw(new Error("Cannot set uniform '"+uniform+"' to 'undefined'"));
     }
 
     if( tdl.gl.tdl.currentProgram !== this ){
         //console.trace();
+        debugger;
         throw new Error("You must use() the shader before setting uniforms");
     }
 
@@ -975,8 +977,12 @@ tdl.programs.Program.prototype.setVertexFormatHelper = function(B){
     for(var i=0;i<this.max_vertex_attribs;++i){      
         if( usedattribs[i]  &&  !tdl.gl.tdl.attribArrayStatus[i] )
             tdl.gl.enableVertexAttribArray(i);
-        else if( !usedattribs[i]  && tdl.gl.tdl.attribArrayStatus[i])
+        else if( !usedattribs[i]  && tdl.gl.tdl.attribArrayStatus[i]){
             tdl.gl.disableVertexAttribArray(i);   
+            if( i === 0 ){
+                console.warn("Warning: Not using vertex attribute zero (drawing will be slow)");
+            }
+        }
     }
 
 }

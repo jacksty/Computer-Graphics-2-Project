@@ -9,6 +9,7 @@ uniform sampler2D specMap;
 uniform sampler2D normalMap;
 uniform mat4 worldMatrix;
 uniform float lightMode;
+
 varying vec3 oNormal;
 varying vec3 oTangent;
 varying vec2 texpos;
@@ -32,10 +33,10 @@ void main()
 	
 	if(bump.a != 0.0){
 		bump = bump * 2.0 - 1.0;
-		vec3 binormal = cross(oTangent, oNormal);
-		mat3 tanToObj = mat3(oTangent.x, binormal.x, oNormal.x,
-							 oTangent.y, binormal.y, oNormal.y,
-							 oTangent.z, binormal.z, oNormal.z);
+		vec3 bitangent = cross(oTangent, oNormal);
+		mat3 tanToObj = mat3(oTangent.x, bitangent.x, oNormal.x,
+							 oTangent.y, bitangent.y, oNormal.y,
+							 oTangent.z, bitangent.z, oNormal.z);
 		normal = normalize((worldMatrix * vec4(bump.xyz * tanToObj, 0.0)).xyz);
 	}else if(lightMode != BILLBOARD)
 		normal = normalize((worldMatrix * vec4(normal, 0.0)).xyz);

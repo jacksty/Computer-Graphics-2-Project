@@ -48,15 +48,6 @@ tdl.require('tdl.textures');
  */
 tdl.framebuffers = tdl.framebuffers || {};
 
-/*
-tdl.framebuffers.createFramebuffer = function(width, height, opt_depth) {
-  return new tdl.framebuffers.Framebuffer(width, height, opt_depth);
-};
-
-tdl.framebuffers.createCubeFramebuffer = function(size, opt_depth) {
-  return new tdl.framebuffers.CubeFramebuffer(size, opt_depth);
-};
-*/
 
 tdl.framebuffers.BackBuffer = function(canvas) {
     this.depth = true;
@@ -90,7 +81,9 @@ tdl.framebuffers.getBackBuffer = function(canvas) {
     return new tdl.framebuffers.BackBuffer(canvas)
 };
 
-/**
+/** Create a framebuffer object.
+ *  Note: If the format is floating point, mipmapping will be disabled; you can
+ *     reenable it with fbo.texture.setParameter(gl.TEXTURE_MIN_FILTER, ...)
  * @param width The width of the FBO
  * @param height The height of the FBO
  * @param opts An optional dictionary with these items:
@@ -102,10 +95,12 @@ tdl.framebuffers.getBackBuffer = function(canvas) {
  *                  Default: true
  *          depthtexture: True if a depth texture should be used for
  *                  the depth buffer; false if not. Default: false
+ *          cubemap: True if this should be a cubemap; false if not. Default: false
  *          name: For debugging: A string. Default: ""
  */
 tdl.framebuffers.Framebuffer = function(width, height, opts) {
     
+    //for debugging: So we have a list of all fbo's
     if( tdl.framebuffers.allframebuffers === undefined ){
         tdl.framebuffers.allframebuffers = [];
         tdl.framebuffers.uniquefbid=0;
@@ -123,24 +118,49 @@ tdl.framebuffers.Framebuffer = function(width, height, opts) {
         console.warn("Framebuffer wants option 'format', not 'formats'")
     }
 
+    //if this framebuffer is for internal (TDL) use only,
+    //don't add it to the global list of framebuffers
     if( !opts.internaluseonly )
         tdl.framebuffers.allframebuffers.push(this);
 
     this.formats = (opts.format===undefined ) ? [ [tdl.gl.RGBA,tdl.gl.UNSIGNED_BYTE] ] : opts.format;
     for(var i=0;i<this.formats.length;++i){
         if( this.formats[i].length !== 2 ){
-            throw new Error("Format must be list of pairs, not "+this.formats);
+            throw new Error("Format must be list of pairs, but we found: "+this.formats);
         }
     }
+    
     this.depth =  (opts.depth === undefined ) ? true : opts.depth;
     this.use_depthtexture = (opts.depthtexture === undefined) ? false: opts.depthtexture;
     this.name = (opts.name === undefined) ? "" : opts.name;
     this.width = width;
     this.height = height;
+    this.cubemap = (opts.cubemap === undefined) ? false : opts.cubemap;
+    
+    
+    this.textures=[];       //all the textures for the fbo (several if using MRT)
+    this.texture=undefined; //alias of textures[0]
+    this.depthtextures=[];  //used if use_depthtexture == true. Multiple entries if cubemap.
+    this.depthbuffers=[];   //used if use_depthtexture == false. Multiple entries if cubemap.
+    this.framebuffers=[];   //multiple entries if cubemap: One per cubemap side
+    
+    if( this.cubemap && width !== height ){
+        throw new Error("Cubemaps must be square");
+    }
+    
     this.recoverFromLostContext();
 };
 
+/** Clear the framebuffer to some specified value. Note: It's more efficient
+    to use gl.clear() if the value is between 0...1 (use gl.clearColor()).
+    @param p The value to clear to. Default: [0,0,0,0]
+    @param target the MRT target to clear. Default: 0
+*/
 tdl.framebuffers.Framebuffer.prototype.clear = function( p, targetnumber){
+
+    if( p===undefined )
+        p=[0,0,0,0];
+         
     if( targetnumber === undefined ) 
         targetnumber = 0;
         
@@ -179,26 +199,41 @@ tdl.framebuffers.Framebuffer.prototype.clear = function( p, targetnumber){
     tdl.gl.clearColor(oldclear[0],oldclear[1],oldclear[2],oldclear[3]);
 }
 
+/** Dispose of all resources associated with this FBO */
 tdl.framebuffers.Framebuffer.prototype.dispose = function(){
-    for(var i=0;i<this.textures.length;++i)
-        this.textures[i].dispose();
-    if(this.framebuffer)
-        tdl.gl.deleteFramebuffer(this.framebuffer);
-    if(this.depthtexture)
-        tdl.gl.deleteTexture(this.depthtexture);
-    if( this.depthbuffer )
-        tdl.gl.deleteRenderbuffer(this.depthbuffer);
+    this.textures.forEach( function(t){
+        t.dispose();
+    });
+    this.framebuffers.forEach( function(f){
+        tdl.gl.deleteFramebuffer(f);
+    });
+    this.depthtextures.forEach( function(f){
+        tdl.gl.deleteTexture(f);
+    });
+    this.depthbuffers.forEach( function(d){
+        tdl.gl.deleteRenderbuffer(d);
+    });
 }
 
-tdl.framebuffers.Framebuffer.prototype.bind = function() {
+/** Make this fbo the active render target.
+    @param face: The cubemap face to make active. Only valid if this is a cubemap. Should be 0...5
+*/
+tdl.framebuffers.Framebuffer.prototype.bind = function(face) {
+    
+    if( face !== undefined && !this.cubemap )
+        throw new Error("Not a cubemap; must not bind a face");
+    
+    //list of the attachments we must set    
     var tmp = [];
+    
     for(var i=0;i<this.textures.length;++i){
         if( this.textures[i].isBound() ){
             var u = this.textures[i].getBoundUnits();
-            console.trace();
-            throw new Error("Tried to bind FBO "+this.name+", textue "+i+" as destination, but its texture is active on units: "+u.join(","));
-            //for(var i=0;i<u.length;++i){
-            //    tdl.framebuffers.dummytex.bindToUnit(u[i]);
+            //console.trace();
+            console.error("Tried to bind FBO "+this.name+", texture "+i+" as destination, but its texture is active on units: "+u.join(","));
+            for(var i=0;i<u.length;++i){
+                tdl.framebuffers.dummytex.bindToUnit(u[i]);
+            }
         }
         tmp.push(gl.COLOR_ATTACHMENT0+i);
     }
@@ -208,7 +243,10 @@ tdl.framebuffers.Framebuffer.prototype.bind = function() {
         console.warn("Warning: "+this.name+" Binding the same FBO twice");
     }
     
-    tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, this.framebuffer);
+    if( face === undefined )
+        face=0;
+        
+    tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, this.framebuffers[face]);
     tdl.gl.viewport(0, 0, this.width, this.height);
     tdl.framebuffers.active_fbo = this;
     if( this.textures.length > 1 ){
@@ -216,6 +254,7 @@ tdl.framebuffers.Framebuffer.prototype.bind = function() {
     }
 };
 
+/** Static function: Unbind FBOs: Return rendering to the screen. */
 tdl.framebuffers.Framebuffer.unbind = function() {
     tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, null);
     tdl.gl.viewport(
@@ -225,7 +264,10 @@ tdl.framebuffers.Framebuffer.unbind = function() {
     tdl.framebuffers.active_fbo=undefined;
 };
 
-//allow an FBO to work like a texture
+/** Associate texture 'texnum' with texture unit 'unit'.
+    @param unit: One of the GL texture units. Value: 0...n, where n is usually 16 or 32
+    @param texnum: The texture target for this FBO. Zero, unless this FBO uses MRTs.
+*/
 tdl.framebuffers.Framebuffer.prototype.bindToUnit = function(unit,texnum){
     if( tdl.framebuffers.active_fbo === this ){
         throw new Error("FBO can't be attached to a texture unit while it's the active render target");
@@ -243,14 +285,147 @@ tdl.framebuffers.Framebuffer.prototype.unbind = function() {
   tdl.framebuffers.Framebuffer.unbind();
 };
 
+
+/** Draw the contents of the FBO (as a quad) to the current render target.
+FIXME: This doesn't work with cubemaps yet.
+@param index: Integer: The fbo target, for multiple render targets. Default=0
+@param min: vec4: The values that will be mapped to zero in the output. Default=[0,0,0,0]
+@param max: vec4: The values that will be mapped to one in the output. Default=[1,1,1,1]
+@param channels: String: Should have exactly three characters from "rgbax".
+    Example: Draw the alpha channel of the fbo to the red channel of the output; write zero to green and blue: Use "axx".
+    Example: Draw the green channel only, making it greyscale: Use "ggg".
+    Default value: "rgb"
+    Note that the output always has an alpha value of 1.
+Note: This function changes the current active program to be its own internal one.
+*/
+tdl.framebuffers.Framebuffer.prototype.draw = function(index,min,max,channels){
+    //FIXME: Make this a class attribute, but able to handle
+    //multiple GL contexts
+    
+    var gl = tdl.gl;
+    
+    if( index === undefined )
+        index = 0;
+    if( min === undefined )
+        min=[0,0,0,0];
+    else if( min.length === undefined )
+        min = [min,min,min,min];
+        
+    if( max=== undefined)
+        max=[1,1,1,1];
+    else if( max.length === undefined )
+        max=[max,max,max,max];
+        
+    if( channels === undefined )
+        channels="rgb";
+    
+    if( tdl.framebuffers.Framebuffer.drawprog === undefined ){
+        var L = [
+"attribute vec2 a_position;",
+"attribute vec2 a_texcoord;",
+"varying vec2 v_texcoord;",
+"void main(){",
+" gl_Position = vec4(a_position.xy,0.0,1.0);",
+" v_texcoord = a_texcoord;",
+"}"];
+        var vs = L.join("\n");
+        var L = [
+"precision highp float;",
+"uniform sampler2D texture;",
+"varying vec2 v_texcoord;",
+"uniform vec4 min;",
+"uniform vec4 max;",
+"uniform mat4 colorMatrix;",
+"void main(){",
+" vec4 c = texture2D(texture,v_texcoord);",
+" vec4 t = (c - min) / (max-min);",
+" vec4 t2 = t * colorMatrix; ",
+" gl_FragColor = vec4(t2.rgb,1.0);",
+"}"
+];
+
+        var fs = L.join("\n");
+        tdl.framebuffers.Framebuffer.drawprog = new tdl.Program(null,vs,fs,{params_are_source:true});
+        var vdata=new Float32Array(
+            [ 
+                -1, 1,    0,1,
+                -1,-1,    0,0,
+                 1, 1,    1,1,
+                 1,-1,    1,0,
+            ]
+        );
+        var vb = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER,vb);
+        gl.bufferData(gl.ARRAY_BUFFER,vdata,gl.STATIC_DRAW);
+        tdl.framebuffers.Framebuffer.drawvb=vb;
+        tdl.framebuffers.Framebuffer.drawdummy = new tdl.SolidTexture([0,0,0,0]);
+    }
+    
+    
+    if( channels.length !== 3 )
+        throw new Error("Bad channels");
+        
+    var colormatrix=[0,0,0,0,  0,0,0,0,  0,0,0,0,   0,0,0,0 ];
+    for(var i=0;i<3;++i){
+        if( channels[i] === 'r' )
+            colormatrix[i]=1;        //row 0, column i
+        else if( channels[i] === "g" )
+            colormatrix[4+i]=1;    //row 1, column i
+        else if( channels[i] === 'b' )
+            colormatrix[8+i]=1;   //row 2, column i
+        else if( channels[i] === 'a' )
+            colormatrix[12+i]=1;
+        else if( channels[i] === 'x' )
+            ;
+        else
+            throw new Error("Bad channel");
+    }
+    
+    
+    
+    var dither = tdl.gl.getParameter(tdl.gl.DITHER);
+    tdl.gl.disable(tdl.gl.DITHER);
+    var blend = tdl.gl.getParameter(tdl.gl.BLEND);
+    tdl.gl.disable(tdl.gl.BLEND);
+    var depthtest = tdl.gl.getParameter(tdl.gl.DEPTH_TEST);
+    tdl.gl.disable(tdl.gl.DEPTH_TEST);
+    
+    var prog = tdl.framebuffers.Framebuffer.drawprog;
+    
+    prog.use();        //use our readback program
+    tdl.gl.bindBuffer(gl.ARRAY_BUFFER, tdl.framebuffers.Framebuffer.drawvb);   
+    prog.setVertexFormat("a_position",2,gl.FLOAT, "a_texcoord",2,gl.FLOAT);
+    prog.setUniform("texture",this.textures[index]);  
+    prog.setUniform("colorMatrix",colormatrix);
+    gl.clear(gl.COLOR_BUFFER_BIT);
+    prog.setUniform("min",min);
+    prog.setUniform("max",max);
+    tdl.gl.drawArrays(tdl.gl.TRIANGLE_STRIP,0,4);
+    prog.setUniform("texture",tdl.framebuffers.Framebuffer.drawdummy);
+
+    if( dither )
+        tdl.gl.enable(tdl.gl.DITHER);
+    if( blend )
+        tdl.gl.enable(tdl.gl.BLEND);
+    if( depthtest )
+        tdl.gl.enable(tdl.gl.DEPTH_TEST);
+    return;
+}    
+    
+
+//For debugging: Read back the contents of the framebuffer as
+//an array of items. Parameter index is the index of the buffer
+//to read back (for multiple render targets).
 tdl.framebuffers.Framebuffer.prototype.readback = function(index){
     //FIXME: Make this a class attribute, but able to handle
     //multiple GL contexts
     
+    var gl = tdl.gl;
+    
     if( index === undefined )
         index = 0;
         
-    if( this.readbackprog === undefined ){
+    if( tdl.framebuffers.Framebuffer.readbackprog === undefined ){
         var L = [
 "attribute vec2 a_position;",
 "attribute vec2 a_texcoord;",
@@ -288,7 +463,7 @@ tdl.framebuffers.Framebuffer.prototype.readback = function(index){
 " gl_FragColor = vec4(r,g,0,a);",
 "}"];
         var fs = L.join("\n");
-        this.readbackprog = new tdl.Program(null,vs,fs,{params_are_source:true});
+        tdl.framebuffers.Framebuffer.readbackprog = new tdl.Program(null,vs,fs,{params_are_source:true});
         var vdata=new Float32Array(
             [ 
                 -1, 1,    0,1,
@@ -305,6 +480,8 @@ tdl.framebuffers.Framebuffer.prototype.readback = function(index){
                 format: [ [gl.RGBA,gl.UNSIGNED_BYTE] ] });
         this.readbackdummy = new tdl.SolidTexture([0,0,0,0]);
     }
+    
+    this.readbackprog = tdl.framebuffers.Framebuffer.readbackprog;
     
     var dither = tdl.gl.getParameter(tdl.gl.DITHER);
     tdl.gl.disable(tdl.gl.DITHER);
@@ -351,7 +528,6 @@ tdl.framebuffers.Framebuffer.prototype.readback = function(index){
                     d += 4;
                 }
             }
-            
         }
     }
     this.readbackprog.setUniform("texture",this.readbackdummy);
@@ -371,21 +547,21 @@ tdl.framebuffers.Framebuffer.prototype.recoverFromLostContext = function() {
     if( !tdl.framebuffers.dummytex2 )
         tdl.framebuffers.dummytex2 = new tdl.textures.SolidTexture([255,0,255,255]);
 
-    //make colorbuffer(s)
+    //check if we will be able to make colorbuffer(s)
     if( this.formats.length > 1 ){
         this.dbextension = tdl.gl.getExtension("WEBGL_draw_buffers");
         if(!this.dbextension){
             console.log(this.formats);
-            throw new Error("Program requested multiple FBO attachments, but this system doesn't support the draw_buffers extension");
+            throw new Error("Program requested multiple FBO attachments, but this system doesn't support the WEBGL_draw_buffers extension");
         }
     }
 
+    //see if we need the texture_float extension
     for(var i=0;i<this.formats.length;++i){
-           
         if(this.formats[i][1] === tdl.gl.FLOAT ){
             if(!tdl.gl.getExtension("OES_texture_float") )
                 throw new Error("Requesting float fbo, but this system does not support float textures");
-                
+            
             //the upcoming standards will require this for rendering to float FBO's.
             //older browsers don't need it yet, so we don't check if it fails.
             tdl.gl.getExtension("WEBGL_color_buffer_float");
@@ -396,20 +572,78 @@ tdl.framebuffers.Framebuffer.prototype.recoverFromLostContext = function() {
     }
 
     this.textures=[];
+    
+    
+
+    
     for(var i=0;i<this.formats.length;++i){
         var format = this.formats[i][0];
         var type = this.formats[i][1];
-        var tex = new tdl.textures.SolidTexture( [0,0,255,255] );
+        var tex;
+        if( !this.cubemap ){
+            tex = new tdl.textures.Texture2D( null, null, 
+                { 
+                    width: this.width, height: this.height,
+                    format: format, type: type
+                }
+            );
+            if( type !== gl.UNSIGNED_BYTE )
+                tex.setParameter(gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+        }
+        else{
+            tex = new tdl.textures.CubeMap( null, { 
+                size: this.width, format: format, type: type
+            });
+            tex.setParameter(gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+            tex.setParameter(gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        }    
         tex.debug="fbo_texture("+i+")";
         this.textures.push(tex);
-        this.initializeTexture(tex,format,type);
-    }
-    //shortcut
-    this.texture = this.textures[0];
+    }        
     
+    //shortcut for users of the fbo
+    this.texture = this.textures[0];
+
+    if( !this.cubemap ){
+        this.make_and_setup_framebuffer(tdl.gl.TEXTURE_2D,this.textures);
+    }
+    else{
+        var targets = [
+          tdl.gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+            tdl.gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+            tdl.gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+            tdl.gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+            tdl.gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+            tdl.gl.TEXTURE_CUBE_MAP_NEGATIVE_Z
+        ];
+        //FIXME: does GL support mrt + cubemaps? Should test it...
+        for(var i=0;i<6;++i){
+            this.make_and_setup_framebuffer(targets[i],this.textures);
+        }
+    }
+
+    var status = tdl.gl.checkFramebufferStatus(tdl.gl.FRAMEBUFFER);
+    if (status != tdl.gl.FRAMEBUFFER_COMPLETE && !tdl.gl.isContextLost()) {
+        var err = "Framebuffer setup error: " +tdl.webgl.glEnumToString(status);
+        console.error(err);
+        debugger;
+        throw new Error(err);
+    }
+    tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, null);
+}
+
+/** Internal function: Manufacture a GL framebuffer object which has as its render destination
+    @param target Either TEXTURE_2D or one of CUBE_MAP_{POSITIVE,NEGATIVE}_{X,Y,Z}.
+            This will append new entries to this.framebuffers and this.depthbuffers (or this.depthtextures).
+    @param textures An array of textures. If this is an MRT fbo, there must be as many
+        entries in textures as there are MRT targets.
+    @return The GL framebuffer object.
+*/
+tdl.framebuffers.Framebuffer.prototype.make_and_setup_framebuffer = function(target,textures){
     var fb = tdl.gl.createFramebuffer();
     tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, fb);
-   
+    this.framebuffers.push( fb );
+    
     if (this.depth) {
         if( this.use_depthtexture){
             var exts=["WEBGL_depth_texture","WEBKIT_WEBGL_depth_texture",
@@ -421,50 +655,50 @@ tdl.framebuffers.Framebuffer.prototype.recoverFromLostContext = function() {
             if(!x)
                 throw new Error("Framebuffer requested depth texture, but your system can't support it");
             
-            this.depthtexture = new tdl.textures.SolidTexture([0,0,0,0]);
-            this.depthtexture.debug = "fbo depth texture";
-            this.initializeTexture(this.depthtexture,
-                tdl.gl.DEPTH_STENCIL,x.UNSIGNED_INT_24_8_WEBGL);
+            var dt = new tdl.Texture2D(null,null,
+                    { width: this.width, height: this.height,
+                        format: tdl.gl.DEPTH_STENCIL, type: x.UNSIGNED_INT_24_8_WEBGL
+                    });
+            dt.setParameter(gl.TEXTURE_MIN_FILTER,gl.NEAREST);
+            dt.setParameter(gl.TEXTURE_MAG_FILTER,gl.NEAREST);
+            
+            this.depthtextures.push(dt);
+            if( this.depthtextures.length === 1 )
+                this.depthtexture = this.depthtextures[0];
+                
             tdl.gl.framebufferTexture2D(
                 tdl.gl.FRAMEBUFFER,
                 tdl.gl.DEPTH_STENCIL_ATTACHMENT,
                 tdl.gl.TEXTURE_2D,
-                this.depthtexture.texture,
+                this.depthtextures[this.depthtextures.length-1].texture,
                 0);
         }
         else{
-            //use a renderbuffer for depth buffer
-            this.depthbuffer = tdl.gl.createRenderbuffer();
-            tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, this.depthbuffer);
+            //use a renderbuffer for depth buffer. This has potentially worse depth precision
+            //than using a depth texture (16 bits vs 24).
+            this.depthbuffers.push(tdl.gl.createRenderbuffer());
+            tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, this.depthbuffers[this.depthbuffers.length-1]);
             tdl.gl.renderbufferStorage(
                 tdl.gl.RENDERBUFFER, tdl.gl.DEPTH_COMPONENT16, this.width, this.height);
             tdl.gl.framebufferRenderbuffer(
                 tdl.gl.FRAMEBUFFER,
                 tdl.gl.DEPTH_ATTACHMENT,
                 tdl.gl.RENDERBUFFER,
-                this.depthbuffer);
+                this.depthbuffers[this.depthbuffers.length-1]);
             tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, null);
         }
     }
-
     
     for(var i=0;i<this.formats.length;++i){
         tdl.gl.framebufferTexture2D(
             tdl.gl.FRAMEBUFFER,
             tdl.gl.COLOR_ATTACHMENT0 + i,
-            tdl.gl.TEXTURE_2D,
-            this.textures[i].texture,
-            0);
+            target,
+            textures[i].texture,
+            0
+        );
     }
-    
-    var status = tdl.gl.checkFramebufferStatus(tdl.gl.FRAMEBUFFER);
-    if (status != tdl.gl.FRAMEBUFFER_COMPLETE && !tdl.gl.isContextLost()) {
-        throw(new Error("Framebuffer setup error: " +
-          tdl.webgl.glEnumToString(status) ));
-    }
-    this.framebuffer = fb;
-    tdl.gl.bindFramebuffer(tdl.gl.FRAMEBUFFER, null);
-};
+}
 
 tdl.framebuffers.Framebuffer.prototype.initializeData = function(data,targetnumber){
     if(targetnumber === undefined )
@@ -529,29 +763,51 @@ tdl.framebuffers.Framebuffer.prototype.initializeData = function(data,targetnumb
 }
 
 /** Internal function */
-tdl.framebuffers.Framebuffer.prototype.initializeTexture = function(tex,format,type){
+/*
+tdl.framebuffers.Framebuffer.prototype.initializeTexture = function(tex,format,type,cubeface){
     
-    tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, tex.texture);
+    var target;
+    if( cubeface === undefined )
+        target=tdl.gl.TEXTURE_2D;
+    else{
+        target = cubeface;
+        if( target !== gl.TEXTURE_CUBE_MAP_POSITIVE_X && 
+            target !== gl.TEXTURE_CUBE_MAP_POSITIVE_Y && 
+            target !== gl.TEXTURE_CUBE_MAP_POSITIVE_Z && 
+            target !== gl.TEXTURE_CUBE_MAP_NEGATIVE_X &&  
+            target !== gl.TEXTURE_CUBE_MAP_NEGATIVE_Y && 
+            target !== gl.TEXTURE_CUBE_MAP_NEGATIVE_Z ){
+                throw new Error("?");
+        }
+    }
+
+    tex.bindToUnit(0);
+    //tdl.gl.bindTexture(tdl.gl.TEXTURE_2D, tex.texture);
     
     tex.setParameter(tdl.gl.TEXTURE_MIN_FILTER, tdl.gl.LINEAR);
     tex.setParameter(tdl.gl.TEXTURE_MAG_FILTER, tdl.gl.LINEAR);
     tex.setParameter(tdl.gl.TEXTURE_WRAP_S, tdl.gl.CLAMP_TO_EDGE);
     tex.setParameter(tdl.gl.TEXTURE_WRAP_T, tdl.gl.CLAMP_TO_EDGE);
+
     
-    tdl.gl.texImage2D(tdl.gl.TEXTURE_2D,
-                0,                 // level
-                format,              // internalFormat
-                this.width,        // width
-                this.height,       // height
-                0,                 // border
-                format,            // format: rgba, luminance, etc
-                type,             // type: unsigned_byte, float, etc.
+    tdl.gl.texImage2D(target,
+                0,                  // mip level
+                format,             // internalFormat
+                this.width,         // width
+                this.height,        // height
+                0,                  // border
+                format,             // format: rgba, luminance, etc
+                type,               // type: unsigned_byte, float, etc.
                 null );             // data
+                
     tex.width = this.width;
     tex.height = this.height;
     tdl.gl.bindTexture(tdl.gl.TEXTURE_2D,null);
 };
+*/
 
+
+/*
 tdl.framebuffers.CubeFramebuffer = function(size, opts) {
     if(opts===undefined)
         opts={};
@@ -628,15 +884,15 @@ tdl.framebuffers.CubeFramebuffer.prototype.recoverFromLostContext = function() {
   }
   tdl.gl.bindRenderbuffer(tdl.gl.RENDERBUFFER, null);
   this.texture = tex;
-};
+}
 
+/*
 tdl.framebuffers.Float32Framebuffer = function(width, height, opts) {
     if(!opts)
         opts={};
     opts.format=[ [tdl.gl.RGBA,tdl.gl.FLOAT] ];
     return new tdl.framebuffers.Framebuffer(width,height,opts);
 }
-/*
 tdl.base.inherit(tdl.framebuffers.Float32Framebuffer, tdl.framebuffers.Framebuffer);
 
 tdl.framebuffers.Float32Framebuffer.prototype.setData = function(data){

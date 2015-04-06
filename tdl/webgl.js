@@ -215,21 +215,22 @@ tdl.webgl.create3DContext = function(canvas, opt_attribs) {
     
     context.tdl.attribArrayStatus = [];
     
-    var DA = context.drawArrays;
-    context.drawArrays = function(){
+    //var DA = context.drawArrays;
+    context.drawArraysO=context.drawArrays;
+    context.drawArrays = function(m,f,c){
         if( context.tdl.currentProgram ){
             context.tdl.currentProgram.checkUninitialized();
         }
         try{
-            DA.apply(context,arguments);
+            context.drawArraysO(m,f,c);
         }
         catch(c){
             console.trace();
             throw(c);
         }
     }
-    var DE = context.drawElements;
-    context.drawElements = function(){
+    context.drawElementsO = context.drawElements;
+    context.drawElements = function(m,c,t,o){
         if( context.tdl.currentProgram ){
             context.tdl.currentProgram.checkUninitialized();
             if( tdl.webgl.doingCapture ){
@@ -238,7 +239,7 @@ tdl.webgl.create3DContext = function(canvas, opt_attribs) {
         }
         
         try{
-            DE.apply(context,arguments);
+            context.drawElementsO(m,c,t,o);
         }
         catch(c){
             console.trace();
@@ -246,18 +247,19 @@ tdl.webgl.create3DContext = function(canvas, opt_attribs) {
         }
     }
     
-    var EA = context.enableVertexAttribArray;
-    context.enableVertexAttribArray = function(){
-        context.tdl.attribArrayStatus[arguments[0]] = true;
-        EA.apply(context,arguments);
+    //var EA = context.enableVertexAttribArray;
+    context.enableVertexAttribArrayO=context.enableVertexAttribArray;
+    context.enableVertexAttribArray = function(i){
+        context.tdl.attribArrayStatus[i] = true;
+        context.enableVertexAttribArrayO(i);
     }
     
-    var DVA = context.disableVertexAttribArray;
-    context.disableVertexAttribArray = function(){
-        context.tdl.attribArrayStatus[arguments[0]] = false;
+    context.disableVertexAttribArrayO = context.disableVertexAttribArray;
+    context.disableVertexAttribArray = function(i){
+        context.tdl.attribArrayStatus[i] = false;
         if( arguments.length > 1 )
             throw new Error("?");
-        DVA.apply(context,arguments);
+        context.disableVertexAttribArrayO(i);
     }
     
     // Disallow selection by default. This keeps the cursor from changing to an

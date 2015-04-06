@@ -91,6 +91,7 @@ Billboard.prototype.updateBuffer = function(){
 
 Billboard.prototype.draw = function(prog){
 	prog.setUniform("tex", this.texture);
+	prog.setUniform("lightMode", 2);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 	prog.setVertexFormatInstanced(

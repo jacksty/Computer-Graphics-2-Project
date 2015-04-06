@@ -151,13 +151,13 @@ Tank.prototype.computeGWM = function(){
 }
 
 Tank.prototype.draw = function(prog){
-	prog.setUniform("worldMatrix", this.worldMatrix);
 	for(var i = 0; i < 4; ++i){
+		Tank.mesh[i].matrix = this.worldMatrix;
 		Tank.mesh[i].draw(prog);
 	}
-	prog.setUniform("worldMatrix", this.turretMatrix);
+	Tank.mesh[4].matrix = this.turretMatrix;
 	Tank.mesh[4].draw(prog);
-	prog.setUniform("worldMatrix", this.gunMatrix);
+	Tank.mesh[5].matrix = this.gunMatrix;
 	Tank.mesh[5].draw(prog);
 }
 

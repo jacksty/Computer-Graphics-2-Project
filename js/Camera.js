@@ -164,9 +164,9 @@ Camera.prototype.lean = function(rads){
 }
 
 Camera.prototype.draw = function(program){
-	program.setUniform("viewProjMat", this.viewProjMatrix);
+	program.setUniform("viewProjMat", this.viewProjMatrix, true);
 	program.setUniform("cameraPos", main.cam.eye);
-	program.setUniform("cameraU", this.right);
-	program.setUniform("cameraV", this.up);
-	program.setUniform("cameraW", tdl.mul(-1, this.antilook));
+	program.setUniform("cameraU", this.right, true);
+	program.setUniform("cameraV", this.up, true);
+	program.setUniform("cameraW", tdl.mul(-1, this.antilook), true);
 }

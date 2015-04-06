@@ -45,12 +45,13 @@ function main(){
     
 	main.time = new Date();
 	main.keyDict = {};
-    var loader = new tdl.Loader(function(){setInterval(update, 41)});
+    var loader = new tdl.Loader(function(){setInterval(update, 24)});
     var shaders = [
                    ["buffer", "vsBuffer.glsl", "fsBuffer.glsl"],
                    ["deferred", "vsDeferred.glsl", "fsDeferred.glsl"],
                    ["transparent", "vsBuffer.glsl", "fsTransparent.glsl"],
-				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"]
+				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"]/*,
+				   ["water", "vsWater.glsl", "fsWater.glsl"]*/
                   ];
     loadShaders(loader, shaders);
     
@@ -64,24 +65,25 @@ function main(){
     	up:[0,1,0,0],
     	eye:[0,2,3,1]
     });
-    main.cameraMode = 3;
-    main.entities = [];
-	main.billboards = [];
-    main.transEnt = [];
-	main.billboards.push(new Tree(loader, [0,0,0], [1, 1], 10));
-	main.tank = new Tank([0,0,-3,1]);
-    main.ground = new Mesh(loader, "ground.mesh");
-    main.ground.WM = tdl.scaling(20,20,20);
+    main.cameraMode = 1;
     main.amb = [0.05,0.05,0.05];
     main.lightattr = ["pos", "col", "dir", "atten", "brightness"];
     main.lights = [];
+    main.lights.push([[0,0,0,0],[0,0,0,-1],[0,0,0],[1,0,0],0]);
     main.lights.push([ //sun
-                 [20,100,12,0], //position
+                 [100,100,100,0], //position
                  [1,1,1,-1], //color
                  [0,0,0], //direction
                  [1,0,0], //attenuation
                  1 //brightness
     ]);
+    main.lights.push([
+                      [10,10,-5,1], //problem with positional lights
+                      [1,1,1,-1],//[0.5,1,0.5,-1],
+                      [0,0,0],
+                      [0,0,0],
+                      0.5
+                      ]);
     main.deferredFBO = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height, {
     	format: [
     	         	[gl.RGBA, gl.UNSIGNED_BYTE],
@@ -92,13 +94,27 @@ function main(){
     	depthtexture:true
     });
     main.us = new UnitSquare();
-    main.dummytex = new tdl.textures.SolidTexture([0,0,0,0.1]);
-    main.blankColor = new tdl.SolidTexture([0,0,0,0]);
-    main.entities.push(new Mesh(loader, "barrel.mesh"));
-    main.entities[main.entities.length-1].matrix = tdl.translation([-3,0,-2,1]);
+    main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
+    main.tank = new Tank([0,0,-3,1]);
+    
+    main.entities = [
+                     new Mesh(loader, "ground.mesh", {scaling: [20, 20, 20]}),
+                     main.tank
+                    ];
+    main.billboards = [
+                       new Tree(loader, [0,0,0], [1, 1], 10)
+                       ];
+    main.transEnt = [
+                     new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [-3,0,-2,1]})
+                     ];
+    
+    /*main.wat = [
+                  new HeightMap(200,200,50,50, {pos:[-10,10,-10,1]})
+                  ];*/
     
     gl.clearColor(0,0,0,0);
     loader.finish();
+    setInterval(updateTransparency, 96);
 }
 
 
@@ -208,17 +224,36 @@ main.move = function(type, amtCam, amtAst){
 }
 
 function setDeferredUniforms(prog, cam){
+	cam.draw(prog);
 	prog.setUniform("normalTex", main.deferredFBO.textures[0]);
     prog.setUniform("colorTex", main.deferredFBO.textures[1]);
     prog.setUniform("emissiveTex", main.deferredFBO.textures[2]);
     prog.setUniform("specularTex", main.deferredFBO.textures[3]);
     prog.setUniform("depth_texture", main.deferredFBO.depthtexture);
     prog.setUniform("invViewMatrix", cam.viewMatrixInverse);
-    prog.setUniform("cameraPos", cam.eye);
     prog.setUniform("ambient", tdl.math.divVectorScalar(main.amb, main.lights.length == 0 ? 1 : main.lights.length)); //ambient light value is adjusted by number of passes so that the final ambient lighting stays constant
-    prog.setUniform("winSizeHalfVFOV", [gl.canvas.width, gl.canvas.height, main.cam.vfov*0.5]);
+    prog.setUniform("winSizeVFOV", [gl.canvas.width, gl.canvas.height, main.cam.vfov]);
     prog.setUniform("hitherYon", [main.cam.hither, main.cam.yon]);
 }
+
+function setTransparencyUniforms(prog, cam){
+	cam.draw(prog);
+	prog.setUniform("ambient", main.amb);
+}
+
+function setWaterUniforms(prog, cam){
+	cam.draw(prog);
+	prog.setUniform("depth_texture", main.deferredFBO.depthtexture);
+    prog.setUniform("invViewMatrix", cam.viewMatrixInverse);
+    prog.setUniform("ambient", main.amb);
+    prog.setUniform("winSizeVFOV", [gl.canvas.width, gl.canvas.height, main.cam.vfov]);
+    prog.setUniform("hitherYon", [main.cam.hither, main.cam.yon]);
+    prog.setUniform("direction", tdl.normalize([1,0,-1]));
+    prog.setUniform("frequency", 1);
+    prog.setUniform("AFSpSt", [1,1,1,1]);
+    prog.setUniform("time", t++);
+}
+var t = 0;
 
 function setDummyTex(prog){
 	prog.setUniform("normalTex", main.dummytex);
@@ -229,18 +264,11 @@ function setDummyTex(prog){
 }
 
 function drawOpaqueObjects(prog){
-	prog.setUniform("worldMatrix", main.ground.WM);
-    main.ground.draw(prog);
-    prog.setUniform("worldMatrix", main.worldMat);
-    main.tank.draw(prog);
-    for(var i = 0; i < main.entities.length; i++){
-    	prog.setUniform("worldMatrix", main.entities[i].matrix !== undefined ? main.entities[i].matrix : main.worldMat);
+    for(var i = 0; i < main.entities.length; i++)
 		main.entities[i].draw(prog);
-    }
 	main.billboard.use();
-	main.billboard.setUniform("lightMode", 2);
-	main.billboard.setUniform("normalMap", main.blankColor);
-	main.billboard.setUniform("emitMap", main.blankColor);
+	main.billboard.setUniform("normalMap", main.dummytex);
+	main.billboard.setUniform("emitMap", main.dummytex);
 	main.cam.draw(main.billboard);
 	for(var i = 0; i < main.billboards.length; ++i)
 		main.billboards[i].draw(main.billboard);
@@ -251,9 +279,18 @@ function drawTransparentObjects(prog){
     gl.colorMask(0,0,0,0);
     for(var i = 0; i < main.transEnt.length; ++i)
     	main.transEnt[i].draw(prog);
-    gl.colorMask(true,true,true,true);
+    gl.colorMask(1,1,1,1);
     for(var i = 0; i < main.transEnt.length; ++i)
     	main.transEnt[i].draw(prog);
+}
+
+function drawWater(prog){
+	gl.colorMask(0,0,0,0);
+    for(var i = 0; i < main.transEnt.length; ++i)
+    	main.wat[i].draw(prog);
+    gl.colorMask(1,1,1,1);
+    for(var i = 0; i < main.transEnt.length; ++i)
+    	main.wat[i].draw(prog);
 }
 
 function update(){
@@ -262,6 +299,28 @@ function update(){
 	main.time = newTime;
 	main.keyHandler(dtime);
 	requestAnimationFrame(draw);
+	
+	
+	main.transEnt[0].alpha += 0.005 * dir;
+	main.lights[2][1][2] += 0.005 * dir;
+	main.lights[2][1][1] -= 0.01 * dir;
+	main.lights[2][1][0] += 0.005 * dir;
+	if(main.transEnt[0].alpha > 0.95 || main.transEnt[0].alpha < 0.5)
+		dir = -dir;
+}
+var dir = 1;
+
+function updateTransparency(){
+	main.transEnt.sort(
+			function(a, b){
+				var aa = tdl.subVector(a.position, main.cam.eye);
+				aa = [aa[0] * aa[0] + aa[1] * aa[1] + aa[2] * aa[2]];
+				var bb = tdl.subVector(b.position, main.cam.eye);
+				bb = [bb[0] * bb[0] + bb[1] * bb[1] + bb[2] * bb[2]];
+				
+				return aa - bb;
+			}
+	);
 }
 
 function draw(){
@@ -276,6 +335,7 @@ function draw(){
     
     //pass 2
     gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     main.deferred.use();
     setDeferredUniforms(main.deferred, main.cam);
@@ -285,15 +345,20 @@ function draw(){
     }
     setDummyTex(main.deferred);
     
-    /*
     //pass 3
     gl.enable(gl.CULL_FACE);
-    gl.enable(gl.BLEND);
-    main.transparent.use();
-    main.cam.draw(main.transparent);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    /*//water
+    main.water.use();
+    setWaterUniforms(main.water, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
-    	setLight(main.transparent, i, true);
+    	main.setLight(main.water, i, true);
+    drawWater(main.water);*/
+    //other transparent objects
+    main.transparent.use();
+    setTransparencyUniforms(main.transparent, main.cam);
+    for(var i = 0; i < main.lights.length; ++i)
+    	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
     gl.disable(gl.CULL_FACE);
-    */
 }

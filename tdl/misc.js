@@ -158,6 +158,93 @@ tdl.misc.uploadFrame = function(maxframes){
     tdl.misc.uploadFrame.counter ++;
 }
 
+/* Draw a line using the current shader. 
+    @param p First point of line: vec3 or vec4
+    @param q Second point: vec3 or vec4
+    @param 
     
+//This function is slow and is intended for debugging.
+//p,q = endpoints of line
+tdl.misc.drawLine = function(p,q,color,worldMatrix,viewMatrix,projMatrix){
+    var drawLine = tdl.misc.drawLine;
+    if( drawLine.prog === undefined ){
+        var vs = [
+"attribute vec3 a_position;",
+"uniform mat4 worldMatrix,viewMatrix,projMatrix;"
+"void main(){",
+"   gl_Position = vec4(a_position,1.0)*worldMatrix*viewMatrix*projMatrix;",
+"}"];
+        vs = vs.join("\n");
+        var fs = [
+"uniform vec4 color",
+"void main(){",
+"  gl_FragColor = color;",
+"}"];
+        fs = fs.join("\n");
+        drawLine.prog = new tdl.Program(null,vs,fs,{params_are_source:true});
+        drawLine.vbuffer=gl.createBuffer();
+    }
+    
+    gl.bindBuffer(drawLine.vbuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array( [p[0],p[1],p[2],q[0],q[1],q[2]] ), gl.DYNAMIC_DRAW);
+    drawLine.prog.use();
+    drawLine.prog.setUniform("color", color ? color : [1,1,1,1] );
+    drawLine.prog.setUniform("worldMatrix", worldMatrix ? worldMatrix:tdl.identity());
+    drawLine.prog.setUniform("viewMatrix", viewMatrix ? viewMatrix : tdl.identity() );
+    drawLine.prog.setUniform("projMatrix", projMatrix ? projMatrix : tdl.identity() );
+    drawLine.prog.setVertexFormat("a_position",3,gl.FLOAT);
+    drawLine.drawArrays(gl.LINES,0,2);
+}
+    
+*/
+
+/** Draw text string str at point p with the given color (a 4-vec). */
+/*
+tdl.misc.drawText = function(str,p,color,worldMatrix,viewMatrix,projMatrix){
+    var drawText = tdl.misc.drawText;
+    if( drawText.prog === undefined ){
+        var vs = [
+"attribute vec3 a_position;",
+"uniform mat4 worldMatrix,viewMatrix,projMatrix;"
+"void main(){",
+"   gl_Position = vec4(a_position,1.0)*worldMatrix*viewMatrix*projMatrix;",
+"}"];
+        vs = vs.join("\n");
+        var fs = [
+"uniform vec4 color",
+"void main(){",
+"  gl_FragColor = color;",
+"}"];
+        fs = fs.join("\n");
+        drawText.prog = new tdl.Program(null,vs,fs,{params_are_source:true});
+        drawText.vbuffer=gl.createBuffer();
+    }
+    
+    gl.bindBuffer(drawText.vbuffer);
+    gl.bufferData(gl.ARRAY_BUFFER,new Float32Array( [p[0],p[1],p[2],q[0],q[1],q[2]] ), gl.DYNAMIC_DRAW);
+    drawText.prog.use();
+    drawText.prog.setUniform("worldMatrix", worldMatrix ? worldMatrix:tdl.identity());
+    drawText.prog.setUniform("viewMatrix", viewMatrix ? viewMatrix : tdl.identity() );
+    drawText.prog.setUniform("projMatrix", projMatrix ? projMatrix : tdl.identity() );
+    drawText.prog.setVertexFormat("a_position",3,gl.FLOAT);
+    drawText.drawArrays(gl.LINES,0,2);
+}
+*/ 
+  
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
     
 

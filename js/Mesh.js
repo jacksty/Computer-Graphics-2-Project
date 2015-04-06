@@ -1,8 +1,55 @@
 "use strict";
 
-function Mesh(loader,fname){
+
+function Frame(parent, args){ //utility subclass for determining mesh position/size/orientation
+	this.parent = parent;
+	if(args !== undefined){
+		parent.right = args.right !== undefined ? tdl.normalize(args.right) : [1,0,0,0];
+		parent.up = args.up !== undefined ? tdl.normalize(args.up) : [0,1,0,0];
+		parent.back = args.back !== undefined ? tdl.normalize(args.back) : [0,0,1,0];
+		parent.position = args.position !== undefined ? args.position : [0,0,0,1];
+		parent.scaling = args.scaling !== undefined ? tdl.scaling(args.scaling) : tdl.scaling(1,1,1);
+	}
+	parent.right = parent.right === undefined ? [1,0,0,0] : parent.right;
+	parent.up = parent.up === undefined ? [0,1,0,0]: parent.up;
+	parent.back = parent.back === undefined ? [0,0,1,0]: parent.back;
+	parent.position = parent.position === undefined ? [0,0,0,1]: parent.position;
+	parent.scaling = parent.scaling === undefined ? tdl.scaling(1,1,1): parent.scaling;
+	this.computeWorldMatrix();
+}
+
+Frame.prototype.computeWorldMatrix = function(){
+	var translate = tdl.mul(this.parent.scaling, tdl.translation(this.parent.position));
+	var rotate = [-this.parent.back[0], -this.parent.back[1], -this.parent.back[2], 0,
+	              this.parent.up[0], this.parent.up[1], this.parent.up[2], 0,
+	              this.parent.right[0], this.parent.right[1], this.parent.right[2], 0,
+	              0, 0, 0, 1];
+	this.parent.matrix = tdl.mul(rotate, translate);
+}
+
+Frame.prototype.setPosition = function(position){
+	this.parent.position = position;
+	this.computeWorldMatrix();
+}
+
+Frame.prototype.setOrientation = function(right, up, back){
+	this.parent.right = tdl.normalize(right);
+	this.parent.up = tdl.normalize(up);
+	this.parent.back = tdl.normalize(back);
+	this.computeWorldMatrix();
+}
+
+Frame.prototype.setScaling = function(scaling){
+	this.parent.scaling = tdl.scaling(scaling);
+	this.computeWorldMatrix();
+}
+
+function Mesh(loader,fname, args){
 	this.objs = [];
-	this.alpha = 1.0;
+	if(args !== undefined)
+		this.alpha = args.alpha;
+	this.alpha = this.alpha === undefined ? 1.0 : this.alpha;
+	this.frame = new Frame(this, args);
     var that=this;
     loader.loadArrayBuffer(getInProjectPath("m",fname),function(a){
         that.setup(loader, a);
@@ -61,8 +108,9 @@ Mesh.prototype.setup = function(loader, ab){
         	this.texture = new tdl.Texture2D(loader, getInProjectPath("t",lst[1]));
         else if(lst[0] === "normal_map")
         	this.bump = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
-        else if(lst[0] === "specular_map")
+        else if(lst[0] === "specular_map"){
         	this.specmtl = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
+        }
         else if(lst[0] === "emissive_map")
         	this.emitTex = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
         else{
@@ -97,7 +145,8 @@ Mesh.prototype.setup = function(loader, ab){
 Mesh.prototype.draw = function(prog){
 	if(this.alpha !== 1.0)
     	prog.setUniform("alpha", this.alpha);
-    
+	prog.setUniform("worldMatrix", this.matrix);
+	
     gl.bindBuffer(gl.ARRAY_BUFFER,this.vbuff);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.ibuff);
     

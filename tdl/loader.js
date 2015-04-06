@@ -111,6 +111,8 @@ tdl.loader.Loader.prototype.toString = function(){
  *     string.
  */
 tdl.loader.Loader.prototype.loadTextFile = function(url, callback) {
+    if( !url )
+        throw new Error("Bad argument to loader");
     
     //we need to ensure the loader doesn't think it's done
     //until we've gotten all the data parsed
@@ -119,12 +121,10 @@ tdl.loader.Loader.prototype.loadTextFile = function(url, callback) {
     var that=this;
     
     this.loadArrayBuffer(url,function(ab){
-        //console.log("in callback for loadTextFile for "+url);
         var b = new Blob([ab]);
         var r = new FileReader();
         r.addEventListener("loadend",function(){
             if( callback ){
-                //console.log("loadTextFile calling its callback");
                 callback(r.result);
             }
             that.loadCompleted(synthetic);
@@ -136,9 +136,10 @@ tdl.loader.Loader.prototype.loadTextFile = function(url, callback) {
 
 tdl.loader.Loader.prototype.loadArrayBuffer = function(url,callback){
     
-    if( document.location.protocol === "file:"){
-    }
-    else
+    if( !url )
+        throw new Error("Bad argument to loader");
+        
+    if( document.location.protocol !== "file:")
         url = url + "?_="+((new Date()).getTime());
     
     var req = new XMLHttpRequest();
@@ -149,11 +150,8 @@ tdl.loader.Loader.prototype.loadArrayBuffer = function(url,callback){
         if(req.readyState === 4 ){
             if(req.status === 200 || req.status === 0){
                 if( callback){
-                    //console.log("loadArrayBuffer calling callback for "+url);
                     callback(req.response);
                 }
-                    
-                //console.log("loadArrayBuffer calling loadCompleted for "+url);
                 that.loadCompleted(url);
             }
             else
@@ -169,13 +167,10 @@ tdl.loader.Loader.prototype.loadArrayBuffer = function(url,callback){
     }
 }
 
-tdl.loader.Loader.prototype.loadImage = function(url,callback){
-    //error check: Catch attempts to load non-image files
-    
+tdl.loader.Loader.prototype.getMimeType = function(url){
     var tmp = url.split(".");
     var suffix = tmp[tmp.length-1];
     suffix = suffix.toLowerCase();
-    var that=this;
     
     var sdict = {
         "png" : "image/png",
@@ -183,17 +178,27 @@ tdl.loader.Loader.prototype.loadImage = function(url,callback){
         "jpg" : "image/jpeg",
         "gif" : "image/gif",
         "svg" : "image/svg"
-    };
-    if( sdict[suffix] === undefined ){
-        throw new Error("loadImage called with argument "+url+": Not an image file");
-    }
+    }; 
     
-    if( document.location.protocol === "file:" ){
-    }
-    else
+    if(sdict[suffix] )
+        return sdict[suffix]
+        
+    return "application/octet-stream";
+}
+
+
+tdl.loader.Loader.prototype.loadImage = function(url,callback){
+    if( !url )
+        throw new Error("Bad argument to loader");
+    //error check: Catch attempts to load non-image files
+    var that=this;
+    var mimetype = this.getMimeType(url);
+    if( !mimetype.startsWith("image/") )
+        throw new Error("loadImage called with argument "+url+": Not an image file");
+    
+    if( document.location.protocol !== "file:" )
         url += "?_="+((new Date()).getTime());
      
-    
     var img = new Image();
     this.to_load.push(url);
     var that=this;
@@ -213,30 +218,12 @@ tdl.loader.Loader.prototype.loadImage = function(url,callback){
 
 
 tdl.loader.Loader.prototype.loadDataURL = function(url,callback,mimetype){
-    
-    var tmp = url.split(".");
-    var suffix = tmp[tmp.length-1];
-    suffix = suffix.toLowerCase();
+    if( !url )
+        throw new Error("Bad argument to loader");
+    var mimetype = this.getMimeType(url);
     var that=this;
-  
-    if( document.location.protocol === "file:" ){
-    }
-    else
+    if( document.location.protocol !== "file:" )
         url += "?_="+((new Date()).getTime());
-    
-    var sdict = {
-        "png" : "image/png",
-        "jpeg" : 'image/jpeg',
-        "jpg" : "image/jpeg",
-        "gif" : "image/gif",
-        "svg" : "image/svg",
-    };
-    if( sdict[suffix] === undefined && mimetype === undefined ){
-        mimetype = "application/octet-stream";
-    } 
-    else if( mimetype === undefined )
-        mimetype = sdict[suffix];
-    
     
     this.loadArrayBuffer(url,function(ab){
         var b = new Blob([ab],{type:mimetype,endings:'transparent'});
@@ -279,10 +266,7 @@ tdl.loader.Loader.prototype.createSubloader = function(onFinished) {
  */
 tdl.loader.Loader.prototype.loadCompleted = function(thing){
     var flag=false;
-    
 
-    //console.log("in loadCompleted for "+thing);
-    
     for(var i=0;i<this.to_load.length;++i){
         if( this.to_load[i] === thing ){
             var so = this.to_load.splice(i,1);
@@ -291,16 +275,10 @@ tdl.loader.Loader.prototype.loadCompleted = function(thing){
         }
     }
     
-    //console.log(this.uniqueid+": to_load:",this.to_load.length,"things left:"
-    //    +this.to_load);
-    
     if( !flag )
         console.error("Internal loader error: Lost item "+thing);
     
-    //console.log("to_load:",this.to_load.join(" | "));
-   
     if( this.to_load.length === 0 ){
-        //console.log("calling loader onFinished");
         if( this.onFinished_ )
             this.onFinished_();
     }
