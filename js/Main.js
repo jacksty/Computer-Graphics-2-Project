@@ -51,7 +51,8 @@ function main(){
                    ["deferred", "vsDeferred.glsl", "fsDeferred.glsl"],
                    ["transparent", "vsBuffer.glsl", "fsTransparent.glsl"],
 				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"],
-				   ["water", "vsWater.glsl", "fsWater.glsl"]
+				   ["water", "vsWater.glsl", "fsWater.glsl"],
+				   ["sky", "vsSky.glsl", "fsSky.glsl"]
                   ];
     loadShaders(loader, shaders);
     
@@ -96,6 +97,9 @@ function main(){
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
     main.tank = new Tank([0,0,-3,1]);
+	
+	Skybox.initialize(loader, ["sky/+x.png","sky/-x.png","sky/+y.png","sky/-y.png","sky/+z.png","sky/-z.png"]);
+	main.skybox = new Skybox({});
     
     main.entities = [
                      new Mesh(loader, "ground.mesh", {scaling: [20, 20, 20]}),
@@ -109,7 +113,7 @@ function main(){
                      ];
     
     main.wat = [
-                  new HeightMap(256,256,50,50, {pos:[-10,10,-10,1], dir:[tdl.normalize([1,0,-0.33]), [1,0,0]]})
+                  new HeightMap(75,75,50,50, {pos:[-10,10,-10,1], dir:[tdl.normalize([1,0,-0.33]), [1,0,0]]})
                   ];
     
     gl.clearColor(0,0,0,0);
@@ -270,6 +274,9 @@ function drawOpaqueObjects(prog){
 	main.cam.draw(main.billboard);
 	for(var i = 0; i < main.billboards.length; ++i)
 		main.billboards[i].draw(main.billboard);
+    
+	
+	
 	prog.use();
 }
 
@@ -344,7 +351,7 @@ function draw(){
         main.us.draw(main.deferred);
     }
     setDummyTex(main.deferred);
-    
+	
     //pass 3
     gl.enable(gl.CULL_FACE);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -361,4 +368,9 @@ function draw(){
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
     gl.disable(gl.CULL_FACE);
+	
+	//skybox
+	main.sky.use();
+	main.cam.draw(main.sky);
+	main.skybox.draw(main.sky);
 }
