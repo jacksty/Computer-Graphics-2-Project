@@ -50,8 +50,8 @@ function main(){
                    ["buffer", "vsBuffer.glsl", "fsBuffer.glsl"],
                    ["deferred", "vsDeferred.glsl", "fsDeferred.glsl"],
                    ["transparent", "vsBuffer.glsl", "fsTransparent.glsl"],
-				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"]/*,
-				   ["water", "vsWater.glsl", "fsWater.glsl"]*/
+				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"],
+				   ["water", "vsWater.glsl", "fsWater.glsl"]
                   ];
     loadShaders(loader, shaders);
     
@@ -108,9 +108,9 @@ function main(){
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [-3,0,-2,1]})
                      ];
     
-    /*main.wat = [
-                  new HeightMap(200,200,50,50, {pos:[-10,10,-10,1]})
-                  ];*/
+    main.wat = [
+                  new HeightMap(256,256,50,50, {pos:[-10,10,-10,1], dir:[tdl.normalize([1,0,-0.33]), [1,0,0]]})
+                  ];
     
     gl.clearColor(0,0,0,0);
     loader.finish();
@@ -248,10 +248,8 @@ function setWaterUniforms(prog, cam){
     prog.setUniform("ambient", main.amb);
     prog.setUniform("winSizeVFOV", [gl.canvas.width, gl.canvas.height, main.cam.vfov]);
     prog.setUniform("hitherYon", [main.cam.hither, main.cam.yon]);
-    prog.setUniform("direction", tdl.normalize([1,0,-1]));
-    prog.setUniform("frequency", 1);
-    prog.setUniform("AFSpSt", [1,1,1,1]);
-    prog.setUniform("time", t++);
+    prog.setUniform("AFSpSt", [1,0.3,0.8,2]);
+    prog.setUniform("time", t++/5);
 }
 var t = 0;
 
@@ -286,8 +284,10 @@ function drawTransparentObjects(prog){
 
 function drawWater(prog){
 	gl.colorMask(0,0,0,0);
-    for(var i = 0; i < main.transEnt.length; ++i)
+    for(var i = 0; i < main.transEnt.length; ++i){
+    	prog.setUniform("directions", main.wat[i].dirs);
     	main.wat[i].draw(prog);
+    }
     gl.colorMask(1,1,1,1);
     for(var i = 0; i < main.transEnt.length; ++i)
     	main.wat[i].draw(prog);
@@ -348,12 +348,12 @@ function draw(){
     //pass 3
     gl.enable(gl.CULL_FACE);
     gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-    /*//water
+    //water
     main.water.use();
     setWaterUniforms(main.water, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.water, i, true);
-    drawWater(main.water);*/
+    drawWater(main.water);
     //other transparent objects
     main.transparent.use();
     setTransparencyUniforms(main.transparent, main.cam);

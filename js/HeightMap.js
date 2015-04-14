@@ -3,7 +3,18 @@ function HeightMap(rows, cols, xsize, zsize, args){
 		this.matrix = args.pos;
 		this.texture = args.tex;
 	}
-	
+	if(args !== undefined && args.dir !== undefined && args.dir.length > 0){
+		var dir = [];
+		var max = 3;
+		var elements = args.dir.length > max ? max : args.dir.length;
+		for(var i = 0; i < elements; ++i)
+			dir.push(args.dir[i][0], args.dir[i][1], args.dir[i][2], 0);
+		for(var i = dir.length; i < 12; ++i)
+			dir.push(0);
+		this.dirs = new tdl.ColorTexture({width:max, height:1, pixels:new Float32Array(dir), type:gl.FLOAT});
+	}
+	else
+		this.dirs = new tdl.SolidTexture([0,0,0,0]);
 	this.matrix = tdl.translation(this.matrix === undefined ? [0,0,0,1] : this.matrix);
 	this.texture = this.texture === undefined ? new tdl.textures.SolidTexture([0,150,255,255]) : this.texture;
 	
