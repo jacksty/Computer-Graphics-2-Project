@@ -3,6 +3,7 @@ attribute vec4 position;
 uniform vec4 cameraPos;
 uniform mat4 viewProjMat;
 uniform mat4 worldMat;
+uniform mat4 reflectionMatrix;
 
 varying vec4 v_worldPos;
 

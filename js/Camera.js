@@ -1,6 +1,10 @@
 "use strict";
 
 function Camera(opts){
+	this.recalc(opts);
+}
+
+Camera.prototype.recalc = function(opts){
 	this.hither = opts.hither !== undefined ? opts.hither : 0.1;
 	this.yon = opts.yon !== undefined ? opts.yon : 1000;
 	this.eye = opts.eye !== undefined ? opts.eye : [0,0,0,1];
@@ -13,11 +17,11 @@ function Camera(opts){
 		this.vfov = 1/this.aspectRatio * this.fov;
 	}else{ 
 		if(opts.vfov !== undefined)
-			this.fov = opts.vfov;
-		else this.fov = 50.625;
-		this.av = this.fov * Math.PI/360
+			this.vfov = opts.vfov;
+		else this.vfov = 50.625;
+		this.av = this.vfov * Math.PI/360;
 		this.ah = this.aspectRatio * this.av;
-		this.vfov = this.fov;
+		this.fov = this.vfov * this.aspectRatio;
 	}
 	
 	if(opts.coi !== undefined && opts.up !== undefined){
@@ -28,39 +32,15 @@ function Camera(opts){
 		this.up = tdl.cross(this.antilook, this.right);
 	}else{
 		this.antilook = [0,0,1,0];
-		this.right = [-1, 0, 0, 0];
+		this.right = [1, 0, 0, 0];
 		this.up = [0, 1, 0, 0];
 	}
 	this.computePM();
 	this.computeVPM();
-}
-
-Camera.prototype.recalc = function(opts){
-	this.hither = opts.hither !== undefined ? opts.hither : this.hither;
-	this.yon = opts.yon !== undefined ? opts.yon : this.yon;
-	this.eye = opts.eye !== undefined ? opts.eye : this.eye;
-	this.aspectRatio = opts.aspect !== undefined ? opts.aspect : gl.canvas.width/gl.canvas.height;
-	
-	if(opts.hfov !== undefined){
-		this.fov = opts.hfov;
-		this.ah = this.fov * Math.PI/360;
-		this.av = 1/this.aspectRatio * this.ah;
-	}else if(opts.vfov !== undefined){ 
-		this.fov = opts.vfov;
-		this.av = this.fov * Math.PI/360
-		this.ah = this.aspectRatio * this.av;
-	}
-	
-	if(opts.coi !== undefined && opts.up !== undefined){
-		this.orientFromCOI(opts.coi, opts.up);
-	}else if(opts.antilook !== undefined && opts.up !== undefined){
-		this.antilook = tdl.normalize(opts.antilook);
-		this.right = tdl.normalize(tdl.cross(opts.up, this.antilook));
-		this.up = tdl.cross(this.antilook, this.right);
-	}
-	
-	this.computePM();
-	this.computeVPM();
+	this.noReflMatrix = [1,0,0,0,
+                         0,1,0,0,
+                         0,0,1,0,
+                         0,0,0,1];
 }
 
 Camera.prototype.correctLen = function(){
@@ -93,6 +73,7 @@ Camera.prototype.computePM = function(){
                        0, 2*this.hither/(T-B), 0, 0,
                        1+2*L/(R-L), 1+2*B/(T-B), this.yon/(this.hither-this.yon), -1,
                        0, 0, this.hither*this.yon/(this.hither-this.yon), 0];
+	this.inverseProjectionMatrix = tdl.inverse(this.projMatrix);
 }
 
 Camera.prototype.computeVPM = function(){
@@ -111,7 +92,7 @@ Camera.prototype.computeVPM = function(){
 	this.viewMatrix = tdl.mul(viewTranslate, viewRotate);
 	this.viewProjMatrix = tdl.mul(this.viewMatrix, this.projMatrix);
 	
-	for(var i = 12; i < 15; ++i)
+	for(var i = 12; i < viewTranslate.length - 1; ++i)
 		viewTranslate[i] = -viewTranslate[i];
 	viewRotate = [this.right[0], this.right[1], this.right[2], 0,
 	              this.up[0], this.up[1], this.up[2], 0,
@@ -165,8 +146,9 @@ Camera.prototype.lean = function(rads){
 
 Camera.prototype.draw = function(program){
 	program.setUniform("viewProjMat", this.viewProjMatrix, true);
-	program.setUniform("cameraPos", main.cam.eye);
+	program.setUniform("cameraPos", main.cam.eye, true);
 	program.setUniform("cameraU", this.right, true);
 	program.setUniform("cameraV", this.up, true);
 	program.setUniform("cameraW", tdl.mul(-1, this.antilook), true);
+	program.setUniform("reflectionMatrix", this.noReflMatrix, true);
 }

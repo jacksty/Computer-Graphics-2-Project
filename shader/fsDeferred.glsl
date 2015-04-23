@@ -7,8 +7,9 @@ precision highp float;
 #define height winSizeVFOV.y
 #define vfov winSizeVFOV.z
 #define LAMBERT 0.0
-#define BILLBOARD 2.0
 #define PHONG 1.0
+#define BILLBOARD 2.0
+#define SKYBOX 3.0
 
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
@@ -25,6 +26,7 @@ uniform sampler2D colorTex;
 uniform sampler2D specularTex;
 uniform sampler2D emissiveTex;
 uniform mat4 invViewMatrix;
+uniform mat4 invProjMatrix;
 uniform vec4 cameraPos;
 uniform vec3 winSizeVFOV;
 uniform vec3 ambient;
@@ -61,10 +63,11 @@ void main()
 	vec3 normal = unspherize(texture2D(normalTex, texCoord));
 	float lightMode = texture2D(colorTex, texCoord).w;
 	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
-	vec3 cameraSpace = vec3(viewportSpace.xy * depth * tan(vfov), depth);
-	vec4 worldSpace = vec4(cameraSpace, 1.0) * invViewMatrix;
+	vec4 cameraSpace = vec4(viewportSpace, texture2D(depth_texture, texCoord).r * 2.0 - 1.0, 1.0) * depth * invProjMatrix;
+	vec4 worldSpace = cameraSpace * invViewMatrix;
 	
-	gl_FragColor = vec4(emissive + ambient * color, 0.0);
+	
+	gl_FragColor = vec4(emissive + ambient * color, 1.0);
 	
 	vec3 toLight = light.pos.xyz - light.pos.w * worldSpace.xyz;
 	float d2 = dot(toLight, toLight);
@@ -89,5 +92,4 @@ void main()
 		spec *= f / 2.0;
 		gl_FragColor.rgb += spec * specmtl.rgb * light.col.rgb;
 	}
-	gl_FragColor.a = 1.0;
 }

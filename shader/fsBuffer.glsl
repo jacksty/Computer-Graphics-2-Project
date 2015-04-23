@@ -8,8 +8,11 @@ uniform sampler2D emitMap;
 uniform sampler2D specMap;
 uniform sampler2D normalMap;
 uniform mat4 worldMatrix;
+uniform vec4 cameraPos;
+uniform vec4 clipPlane;
 uniform float lightMode;
 
+varying vec4 worldPos;
 varying vec3 oNormal;
 varying vec3 oTangent;
 varying vec2 texpos;
@@ -24,7 +27,11 @@ vec2 split2ubyte(float a){
 void main()
 {
 	vec4 color = texture2D(tex, texpos);
-	if( color.a < 0.05 )
+	//if image is transparent OR
+	//there is a clipping plane AND 
+	//the fragment is under the clipping plane OR the camera is under the clipping plane
+	//THEN don't draw the fragment (reflection)
+	if( color.a < 0.05 || (clipPlane.w != 0.0 && (sign(worldPos.y - clipPlane.y) == -1.0 || sign(cameraPos.y - clipPlane.y) == -1.0)))
         discard;
 	vec4 bump = texture2D(normalMap, texpos);
 	vec4 specmtl = texture2D(specMap, texpos);

@@ -6,6 +6,7 @@ attribute vec3 tang;
 uniform sampler2D tex;
 uniform mat4 viewProjMat;
 uniform mat4 worldMatrix;
+uniform mat4 reflectionMatrix;
 uniform vec4 cameraPos;
 
 varying vec4 worldPos;
@@ -21,8 +22,8 @@ void main()
 	oTangent = normalize(tang - dot(tang, norm) * norm);
 	texpos = coords;
 	vec4 p = vec4(position, 1.0);
-	p = p * worldMatrix;
+	p = p * worldMatrix;;
 	worldPos = p;
 	camWorldPos = cameraPos * worldMatrix;
-    gl_Position = p * viewProjMat;
+    gl_Position = p * reflectionMatrix * viewProjMat;
 }

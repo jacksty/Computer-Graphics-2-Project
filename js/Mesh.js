@@ -143,8 +143,7 @@ Mesh.prototype.setup = function(loader, ab){
 }
 
 Mesh.prototype.draw = function(prog){
-	if(this.alpha !== 1.0)
-    	prog.setUniform("alpha", this.alpha);
+    prog.setUniform("alpha", this.alpha, true);
 	prog.setUniform("worldMatrix", this.matrix);
 	
     gl.bindBuffer(gl.ARRAY_BUFFER,this.vbuff);

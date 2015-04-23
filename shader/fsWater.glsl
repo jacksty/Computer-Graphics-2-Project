@@ -1,5 +1,5 @@
 precision highp float;
-#define MAX_LIGHTS 20
+#define MAX_LIGHTS 3
 #define hither hitherYon.x
 #define yon hitherYon.y
 #define vfov winSizeVFOV.z
@@ -17,15 +17,20 @@ struct Light{
 uniform Light light[MAX_LIGHTS];
 uniform sampler2D depth_texture;
 uniform sampler2D tex;
+uniform sampler2D reflection;
 uniform mat4 invViewMatrix;
+uniform mat4 invProjMatrix;
 uniform vec4 cameraPos;
 uniform vec3 ambient;
 uniform vec3 winSizeVFOV;
 uniform vec2 hitherYon;
+uniform float specmtl;
+uniform float murkiness;
 
 varying vec4 worldPos;
 varying vec3 normal;
 varying vec2 texpos;
+varying float h;
 
 
 float linearizeDepth(float depthValue){
@@ -33,13 +38,20 @@ float linearizeDepth(float depthValue){
 }
 
 void main(){
+	vec2 screenpos = gl_FragCoord.xy / vec2(width,height);
 	vec3 color = texture2D(tex, texpos).rgb;
-	float depth = linearizeDepth(texture2D(depth_texture, gl_FragCoord.xy / vec2(width,height)).r);
-	vec3 camtowater = worldPos.xyz - cameraPos.xyz;
-	float camtowaterdist = -sqrt(dot(camtowater, camtowater));
-	float waterdepth = depth - camtowaterdist;
+	vec3 refl = texture2D(reflection, screenpos + normal.xz * h * 0.08).rgb;
+	color = mix(color, refl, 0.3);
+	float depth = texture2D(depth_texture, screenpos).r;
+	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
+	vec4 cameraSpace = vec4(viewportSpace, depth * 2.0 - 1.0, 1) * linearizeDepth(depth) * invProjMatrix;
+	cameraSpace.w = 1.0;
+	vec4 worldSpace = cameraSpace * invViewMatrix;
 	
-	gl_FragColor = vec4(ambient * color.rgb, mix(0.25, 1.0, 0.01*waterdepth));
+	vec4 waterSurfaceToFloor = worldSpace - worldPos;
+	float waterDepth = sqrt(dot(waterSurfaceToFloor.xyz, waterSurfaceToFloor.xyz));
+	
+	gl_FragColor = vec4(ambient * color.rgb, mix(0.25, 1.0, waterDepth * murkiness));
 	
 	for(int i = 0; i < MAX_LIGHTS; ++i){
 		vec3 toLight = light[i].pos.xyz - light[i].pos.w * worldPos.xyz;
@@ -51,6 +63,11 @@ void main(){
 		float f = light[i].brightness/(light[i].atten.x + light[i].atten.y*sqrt(d2) + light[i].atten.z*d2);
 		f = clamp(f, 0.0, 1.0);
 		diff *= f;
-		gl_FragColor.rgb += diff * light[i].col.rgb * color.rgb;
+		vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
+		vec3 R = normalize(reflect(-toLight, normal));
+		float spec = clamp(dot(V, R), 0.0, 1.0);
+		spec = pow(spec, specmtl);
+		spec *= f / 2.0;
+		gl_FragColor.rgb += diff * light[i].col.rgb * color.rgb + spec * light[i].col.rgb;
 	}
 }

@@ -9,9 +9,11 @@ uniform vec4 cameraW;
 uniform vec4 cameraPos;
 uniform mat4 viewProjMat;
 uniform mat4 worldMatrix;
+uniform mat4 reflectionMatrix;
 varying vec2 texpos;
 varying vec3 oNormal;
 varying vec3 oTangent;
+varying vec4 worldPos;
 
 void main()
 {
@@ -28,8 +30,8 @@ void main()
 	oNormal = normalize(vec3(0.0,1.0,0.0));
     
     p = p + tmp.x * size.x * U + tmp.y * size.y * V;   
-    
-    gl_Position = vec4(p,1.0) * viewProjMat;
+    worldPos = vec4(p,1.0) * worldMatrix * reflectionMatrix;
+    gl_Position = worldPos * viewProjMat;
     texpos = coords;
 	
 }

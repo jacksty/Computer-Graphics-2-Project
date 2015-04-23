@@ -1,5 +1,5 @@
 precision highp float;
-#define MAX_LIGHTS 20
+#define MAX_LIGHTS 10
 #define PHONG 1.0
 #define BILLBOARD 2.0
 #define LAMBERT 0.0
@@ -19,6 +19,7 @@ uniform sampler2D specMap;
 uniform sampler2D emitMap;
 uniform mat4 worldMatrix;
 uniform vec4 cameraPos;
+uniform vec4 clipPlane;
 uniform vec3 ambient;
 uniform float alpha;
 uniform float lightMode;
@@ -31,7 +32,11 @@ varying vec2 texpos;
 void main()
 {
 	vec4 color = texture2D(tex, texpos);
-	if( color.a < 0.05 )
+	//if image is transparent OR
+	//there is a clipping plane AND 
+	//the fragment is under the clipping plane OR the camera is under the clipping plane
+	//THEN don't draw the fragment (reflection)
+	if( color.a < 0.05 || (clipPlane.w != 0.0 && (sign(worldPos.y - clipPlane.y) == -1.0 || sign(cameraPos.y - clipPlane.y) == -1.0)))
         discard;
 	vec4 bump = texture2D(normalMap, texpos);
 	vec3 emissive = texture2D(emitMap, texpos).rgb;
