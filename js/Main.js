@@ -30,7 +30,7 @@ function main(){
     
 	main.time = new Date();
 	main.keyDict = {};
-    var loader = new tdl.Loader(function(){setInterval(update, 16)});
+    var loader = new tdl.Loader(init);
     var shaders = [
                    ["buffer", "vsBuffer.glsl", "fsBuffer.glsl"],
                    ["deferred", "vsDeferred.glsl", "fsDeferred.glsl"],
@@ -99,7 +99,7 @@ function main(){
                      ];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
-                  InfiniteWater(50,50,50,50, {position:[0,-10,0,1], directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], amplitude:0.8, frequency:0.3, speed:0.004, steepness:2})
+                  InfiniteWater(5,5,50,50, {position:[0,-10,0,1], directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], amplitude:0.8, frequency:0.3, speed:0.004, steepness:2})
                   ];
     main.wt = 0;
     main.watReflMatrix = [1,0,0,0,
@@ -109,6 +109,12 @@ function main(){
     gl.clearColor(0,0,0,0);
     loader.finish();
     setInterval(updateTransparency, 96);
+}
+
+function init()
+{
+	setInterval(update, 16);
+	draw();
 }
 
 
@@ -124,7 +130,6 @@ function update(){
 	main.time = newTime;
 	main.wt += dtime;
 	keyHandler(dtime);
-	requestAnimationFrame(draw);
 	
 	
 	main.transEnt[0].alpha += 0.005 * dir;

@@ -1,6 +1,7 @@
 function draw(){
 	//pass 1
-	fillReflectionFBO(main.wat[0]);
+	if(main.wat[0] !== undefined)
+		fillReflectionFBO(main.wat[0]);
 	gl.disable(gl.BLEND);
 	main.deferredFBO.bind();
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -59,6 +60,8 @@ function draw(){
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
     gl.disable(gl.CULL_FACE);
+	
+	tdl.requestAnimationFrame(draw);
 }
 
 //DRAW HELPER FUNCTIONS
