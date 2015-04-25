@@ -37,7 +37,10 @@ function main(){
                    ["transparent", "vsBuffer.glsl", "fsTransparent.glsl"],
 				   ["billboard", "billboardVertexShader.txt", "fsBuffer.glsl"],
 				   ["water", "vsWater.glsl", "fsWater.glsl"],
-				   ["sky", "vsSky.glsl", "fsSky.glsl"]
+				   ["sky", "vsSky.glsl", "fsSky.glsl"],
+				   ["square", "vsSquare.glsl", "fsSquare.glsl"],
+				   ["addTex", "vsSquare.glsl", "fsAddTex.glsl"],
+				   ["selfEmissive", "vsBuffer.glsl", "fsSquare.glsl"]
                   ];
     loadShaders(loader, shaders);
     
@@ -80,6 +83,10 @@ function main(){
     });
     main.reflectionFBO = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE);
     
+	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
     main.tank = new Tank([10,10,7,1]);
@@ -97,6 +104,12 @@ function main(){
     main.transEnt = [
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
                      ];
+					 
+	var emissivePatch = new Mesh(loader, "ground.mesh", {position: [-10,0,0,1], scaling: [20, 20, 20]});
+	emissivePatch.texture = emissivePatch.frame.texture = new tdl.SolidTexture([110,200,110,255]);
+	main.glowingEnt = [
+					 emissivePatch
+					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
                   InfiniteWater(5,5,50,50, {position:[0,-10,0,1], directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], amplitude:0.8, frequency:0.3, speed:0.004, steepness:2})

@@ -61,6 +61,12 @@ function draw(){
     drawTransparentObjects(main.transparent);
     gl.disable(gl.CULL_FACE);
 	
+	//glowing objects
+	drawGlowingObjects(main.selfEmissive);
+	main.square.use();
+	main.square.setUniform("tex", main.glowFBO2);
+	main.us.draw(main.square);
+	
 	tdl.requestAnimationFrame(draw);
 }
 
@@ -85,6 +91,58 @@ function drawTransparentObjects(prog){
     gl.colorMask(1,1,1,1);
     for(var i = 0; i < main.transEnt.length; ++i)
     	main.transEnt[i].draw(prog);
+}
+
+function drawGlowingObjects(prog){
+	prog.use();
+	
+	main.glowFBO1.bind();
+	gl.clearColor(0, 0, 0, 0);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	for (var i = 0; i < main.glowingEnt.length; ++i)
+	{
+		main.cam.draw(prog);
+		prog.setUniform("blur", false);
+		main.glowingEnt[i].draw(prog);
+	}
+	prog.setUniform("tex", main.dummytex);
+	main.glowFBO1.unbind();
+	
+	main.square.use();
+	
+	for (var j = 0; j < 1; ++j)
+	{
+		var tex = (j == 0) ? main.glowFBO1.texture : main.glowFBO3.texture;
+		main.glowFBO2.bind();
+		gl.clearColor(0, 0, 0, 0);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		main.square.setUniform("tex", tex);
+		main.square.setUniform("blur", true);
+		main.square.setUniform("blur_deltas", [1, 0]);
+		main.us.draw(main.square);
+		main.square.setUniform("tex", main.dummytex);
+		main.glowFBO2.unbind();
+		
+		main.glowFBO3.bind();
+		gl.clearColor(0, 0, 0, 0);
+		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+		main.square.setUniform("tex", main.glowFBO2.texture);
+		main.square.setUniform("blur", true);
+		main.square.setUniform("blur_deltas", [0, 1]);
+		main.us.draw(main.square);
+		main.square.setUniform("tex", main.dummytex);
+		main.glowFBO3.unbind();
+	}
+	main.addTex.use();
+	main.glowFBO2.bind();
+	gl.clearColor(0, 0, 0, 0);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	main.addTex.setUniform("tex1", main.glowFBO1.texture);
+	main.addTex.setUniform("tex2", main.glowFBO3.texture);
+	main.us.draw(main.addTex);
+	main.addTex.setUniform("tex1", main.dummytex);
+	main.addTex.setUniform("tex2", main.dummytex);
+	main.glowFBO2.unbind();
 }
 
 function drawWater(prog, cam){
