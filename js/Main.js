@@ -119,7 +119,7 @@ function main(){
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
-                  InfiniteWater(5,5,50,50, {position:[0,-10,0,1], directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], amplitude:0.8, frequency:0.3, speed:0.004, steepness:2})
+                  InfiniteWater(50,50,50,50, {position:[0,-10,0,1], directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], amplitude:0.8, frequency:0.3, speed:0.004, steepness:2})
                   ];
     main.wt = 0;
     main.watReflMatrix = [1,0,0,0,
@@ -133,6 +133,42 @@ function main(){
 
 function init()
 {
+	var gg = new Uint8Array(256*4);
+    var ctr=0;
+    for(var i=0;i<256;++i){
+        var v = [Math.random()-0.5,Math.random()-0.5,Math.random()-0.5,0.0];
+        var len = Math.sqrt(v[0]*v[0]+v[1]*v[1]+v[2]*v[2]);
+        if( len === 0.0 ){
+            --i;
+            continue;
+        }
+        v[0] /= len;
+        v[1] /= len;
+        v[2] /= len;
+        gg[ctr++] = (v[0]+1.0)*255;
+        gg[ctr++] = (v[1]+1.0)*255;
+        gg[ctr++] = (v[2]+1.0)*255;
+        gg[ctr++] = 128.0;
+    }
+        
+    main.G = new tdl.ColorTexture({width:256,height:1,pixels:gg});
+
+    var pp = new Uint8Array(256);
+    for(var i=0;i<256;++i){
+        pp[i]=i;
+    }
+    for(var i=0;i<256;++i){
+        //not quite perfect shuffle, but so what? :-)
+        var j = Math.floor(Math.random()*pp.length);
+        if(j==pp.length) 
+            j=pp.length-1;
+        var tmp = pp[j];
+        pp[j]=pp[i];
+        pp[i]=tmp;
+    }
+    
+    main.P = new tdl.ColorTexture({width:256,height:1,pixels:pp,format:gl.LUMINANCE});
+	
 	setInterval(update, 16);
 	draw();
 }

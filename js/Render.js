@@ -237,6 +237,10 @@ function setWaterUniforms(prog, cam){
     prog.setUniform("invProjMatrix", cam.inverseProjectionMatrix);
     prog.setUniform("reflection", main.reflectionFBO.texture);
     prog.setUniform("specmtl", 32);
+	prog.setUniform("G", main.G);
+	prog.setUniform("P", main.G);
+	prog.setUniform("noisescale", 5.0);
+	prog.setUniform("noisetime", 0.0002 * main.wt);
 }
 
 function setDummyTex(prog){
