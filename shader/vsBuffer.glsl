@@ -22,7 +22,7 @@ void main()
 	oTangent = normalize(tang - dot(tang, norm) * norm);
 	texpos = coords;
 	vec4 p = vec4(position, 1.0);
-	p = p * worldMatrix;;
+	p = p * worldMatrix;
 	worldPos = p;
 	camWorldPos = cameraPos * worldMatrix;
     gl_Position = p * reflectionMatrix * viewProjMat;

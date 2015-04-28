@@ -124,7 +124,7 @@ Mesh.prototype.setup = function(loader, ab){
     if( this.texture === undefined ) 
     	this.texture = new tdl.SolidTexture([225,225,110,255]);
     if(this.specmtl === undefined)
-    	this.specmtl = new tdl.textures.SolidTexture([255,255,255,32]);
+    	this.specmtl = new tdl.textures.SolidTexture([255,255,255,16]);
     if(this.emitTex === undefined)
     	this.emitTex = new tdl.textures.SolidTexture([0,0,0,255]);
     if(this.bump === undefined)

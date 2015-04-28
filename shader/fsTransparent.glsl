@@ -32,9 +32,9 @@ varying vec2 texpos;
 void main()
 {
 	vec4 color = texture2D(tex, texpos);
-	//if image is transparent OR
+	//IF image is transparent OR
 	//there is a clipping plane AND 
-	//the fragment is under the clipping plane OR the camera is under the clipping plane
+	//	the fragment is under the clipping plane OR the camera is under the clipping plane
 	//THEN don't draw the fragment (reflection)
 	if( color.a < 0.05 || (clipPlane.w != 0.0 && (sign(worldPos.y - clipPlane.y) == -1.0 || sign(cameraPos.y - clipPlane.y) == -1.0)))
         discard;
@@ -48,9 +48,9 @@ void main()
 		mat3 tanToObj = mat3(oTangent.x, bitangent.x, oNormal.x,
 							 oTangent.y, bitangent.y, oNormal.y,
 							 oTangent.z, bitangent.z, oNormal.z);
-		normal = normalize((worldMatrix * vec4(bump.xyz * tanToObj, 0.0)).xyz);
+		normal = normalize((vec4(bump.xyz * tanToObj, 0.0) * worldMatrix).xyz);
 	}else if(lightMode != BILLBOARD)
-		normal = normalize((worldMatrix * vec4(normal, 0.0)).xyz);
+		normal = normalize((vec4(normal, 0.0) * worldMatrix).xyz);
 	
 	gl_FragColor = vec4(emissive + ambient * color.rgb, alpha);
 	

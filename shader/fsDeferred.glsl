@@ -10,6 +10,7 @@ precision highp float;
 #define COOKTORRENCE 1.0
 #define BILLBOARD 2.0
 #define SKYBOX 3.0
+#define PHONG 4.0
 
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
@@ -47,7 +48,7 @@ vec3 unspherize(vec4 norm){
 	float sinphi = sqrt(1.0 - pow(n.y, 2.0));
 	n.z = cos(n.x) * sinphi;
 	n.x = sin(n.x) * sinphi;
-	return n;
+	return normalize(n);
 }
 
 float linearizeDepth(float depthValue){
@@ -136,7 +137,6 @@ void main()
 	vec4 cameraSpace = vec4(viewportSpace, texture2D(depth_texture, texCoord).r * 2.0 - 1.0, 1.0) * depth * invProjMatrix;
 	vec4 worldSpace = cameraSpace * invViewMatrix;
 	
-	
 	gl_FragColor = vec4(emissive + ambient * color, 1.0);
 	
 	vec3 toLight = light.pos.xyz - light.pos.w * worldSpace.xyz;
@@ -150,13 +150,23 @@ void main()
 	diff *= f;
 	gl_FragColor.rgb += diff * light.col.rgb * color;
 	
-	if(lightMode == COOKTORRENCE && diff > 0.0){
-		vec4 specmtl = texture2D(specularTex, texCoord);
-		specmtl.a *= 100.0;//255.0; //roughness
+	if(diff > 0.0){
+		if(lightMode == COOKTORRENCE){
+			vec4 specmtl = texture2D(specularTex, texCoord);
+			specmtl.a *= 255.0; //roughness
 		
-		vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
-		vec3 spec = spec_CT(specmtl.a, light.col.rgb, toLight, V, normal);
-		spec *= 0.02;
-		gl_FragColor.rgb += spec * specmtl.rgb;
+			vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
+			vec3 spec = spec_CT(specmtl.a, light.col.rgb, toLight, V, normal);
+			spec *= 0.02;
+			gl_FragColor.rgb += spec * specmtl.rgb;
+		} else if(lightMode == PHONG){
+			vec4 specmtl = texture2D(specularTex, texCoord);
+			vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
+			vec3 R = normalize(reflect(-toLight, normal));
+			float spec = clamp(dot(V, R), 0.0, 1.0);
+			spec = pow(spec, specmtl.a * 255.0);
+			spec *= f / 2.0;
+			gl_FragColor.rgb += spec * specmtl.rgb * light.col.rgb;
+		}
 	}
 }
