@@ -94,9 +94,16 @@ function main(){
 	Skybox.initialize(loader, ["sky/+x.png","sky/-x.png","sky/+y.png","sky/-y.png","sky/+z.png","sky/-z.png"]);
 	main.skybox = new Skybox({});
     
+	City.initialize(loader, "skyscraper.mesh", [
+		new tdl.Texture2D(loader, "tex/skyscraper.png"),
+		new tdl.Texture2D(loader, "tex/skyscraper2.png")
+	]);
+	main.city = new City({width: 8, height: 8, pos: [-50, 0, 0, 1]});
+	
     main.entities = [
                      new Mesh(loader, "ground.mesh", {position: [0,-20,0,1], scaling: [20, 20, 20]}),
-                     main.tank
+                     main.tank,
+					 main.city
                     ];
     main.billboards = [
                        new Tree(loader, [10,10,10], [1, 1], 10)
