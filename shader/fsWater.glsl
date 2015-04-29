@@ -26,6 +26,9 @@ uniform vec3 winSizeVFOV;
 uniform vec2 hitherYon;
 uniform float specmtl;
 uniform float murkiness;
+uniform vec3 fogColor;
+uniform float fogDensity;
+uniform float fogDark;
 
 varying vec4 worldPos;
 varying vec3 normal;
@@ -35,6 +38,11 @@ varying float h;
 
 float linearizeDepth(float depthValue){
 	return hither * yon / (hither - yon) / (depthValue + yon / (hither - yon));
+}
+
+vec3 other_RIM(float exp, vec3 color, vec3 N, vec3 V)
+{
+	return clamp(color * pow(1.0 - dot(N, V), exp), 0.0, 1.0);
 }
 
 void main(){
@@ -47,11 +55,12 @@ void main(){
 	vec4 cameraSpace = vec4(viewportSpace, depth * 2.0 - 1.0, 1) * linearizeDepth(depth) * invProjMatrix;
 	cameraSpace.w = 1.0;
 	vec4 worldSpace = cameraSpace * invViewMatrix;
+	vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
 	
 	vec4 waterSurfaceToFloor = worldSpace - worldPos;
 	float waterDepth = sqrt(dot(waterSurfaceToFloor.xyz, waterSurfaceToFloor.xyz));
 	
-	gl_FragColor = vec4(ambient * color.rgb, mix(0.25, 1.0, waterDepth * murkiness));
+	vec3 cumlight = ambient * color.rgb;
 	
 	for(int i = 0; i < MAX_LIGHTS; ++i){
 		vec3 toLight = light[i].pos.xyz - light[i].pos.w * worldPos.xyz;
@@ -63,11 +72,21 @@ void main(){
 		float f = light[i].brightness/(light[i].atten.x + light[i].atten.y*sqrt(d2) + light[i].atten.z*d2);
 		f = clamp(f, 0.0, 1.0);
 		diff *= f;
-		vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
 		vec3 R = normalize(reflect(-toLight, normal));
 		float spec = clamp(dot(V, R), 0.0, 1.0);
 		spec = pow(spec, specmtl);
 		spec *= f / 2.0;
-		gl_FragColor.rgb += diff * light[i].col.rgb * color.rgb + spec * light[i].col.rgb;
+		cumlight += diff * light[i].col.rgb * color.rgb + spec * light[i].col.rgb;
 	}
+	
+	vec3 rim = 0.34 * other_RIM(8.5, vec3(1.0), normal, V);
+	vec3 tc = clamp(cumlight + rim, 0.0, 1.0);
+	
+	float dist = distance(worldPos.xyz, cameraPos.xyz);
+    float fog = exp(-fogDensity * dist);
+	float dark = (1.0 - (tc.r + tc.g + tc.b) / 3.0) * fogDark;
+    tc = mix(fogColor, mix(tc, fogColor, dark), fog);
+	
+	gl_FragColor.rgb = tc;
+	gl_FragColor.a = mix(0.25, 1.0, waterDepth * murkiness);
 }

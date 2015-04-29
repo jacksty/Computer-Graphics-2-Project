@@ -108,7 +108,7 @@ function main(){
 	var emissivePatch = new Mesh(loader, "ground.mesh", {position: [-10,0,0,1], scaling: [20, 20, 20]});
 	emissivePatch.texture = emissivePatch.frame.texture = new tdl.SolidTexture([110,200,110,255]);
 	main.glowingEnt = [
-					 emissivePatch
+					emissivePatch
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)

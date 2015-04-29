@@ -10,6 +10,7 @@ precision highp float;
 #define COOKTORRENCE 1.0
 #define BILLBOARD 2.0
 #define SKYBOX 3.0
+#define MAX_LIGHTS 10
 
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
@@ -19,7 +20,7 @@ struct Light{
 	float brightness;
 };
 
-uniform Light light;
+uniform Light light[MAX_LIGHTS];
 uniform sampler2D depth_texture;
 uniform sampler2D normalTex;
 uniform sampler2D colorTex;
@@ -31,6 +32,10 @@ uniform vec4 cameraPos;
 uniform vec3 winSizeVFOV;
 uniform vec3 ambient;
 uniform vec2 hitherYon;
+uniform vec3 c2;
+uniform vec3 fogColor;
+uniform float fogDensity;
+uniform float fogDark;
 
 varying vec2 texCoord;
 
@@ -90,7 +95,7 @@ vec3 spec_CT(float roughness, vec3 color, vec3 L, vec3 V, vec3 N)
 	float A = clamp(2.0 * cos_d[0] * min(cos_a[0], cos_b[0]) / cos_c[0], 0.0, 1.0);
 	vec3 specular = vec3(M) * F * vec3(A) / (cos_a * cos_b * vec3(3.14159265358979323));
 	specular *= sign(dot(N, L));
-	return specular;
+	return max(specular, 0.0);
 }
 
 //--DIFFUSE LIGHTING FUNCTIONS--
@@ -130,33 +135,47 @@ void main()
 	depth = linearizeDepth(depth);
 	vec3 color = texture2D(colorTex, texCoord).rgb;
 	vec3 emissive = texture2D(emissiveTex, texCoord).rgb;
-	vec3 normal = unspherize(texture2D(normalTex, texCoord));
+	vec3 N = normalize(unspherize(texture2D(normalTex, texCoord)));
 	float lightMode = texture2D(colorTex, texCoord).w;
 	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
 	vec4 cameraSpace = vec4(viewportSpace, texture2D(depth_texture, texCoord).r * 2.0 - 1.0, 1.0) * depth * invProjMatrix;
 	vec4 worldSpace = cameraSpace * invViewMatrix;
-	
+	vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
+	vec4 specmtl = texture2D(specularTex, texCoord);
+	float specval = specmtl.a * 4.0;
 	
 	gl_FragColor = vec4(emissive + ambient * color, 1.0);
 	
-	vec3 toLight = light.pos.xyz - light.pos.w * worldSpace.xyz;
-	float d2 = dot(toLight, toLight);
-	toLight = normalize(toLight);
-	if(dot(toLight, light.dir) < light.col.a)
-		return;	
-	float diff = clamp(dot(toLight, normal), 0.0, 1.0);
-	float f = light.brightness/(light.atten.x + light.atten.y*sqrt(d2) + light.atten.z*d2);
-	f = clamp(f, 0.0, 1.0);
-	diff *= f;
-	gl_FragColor.rgb += diff * light.col.rgb * color;
+	float litpct = 1.0;
 	
-	if(lightMode == COOKTORRENCE && diff > 0.0){
-		vec4 specmtl = texture2D(specularTex, texCoord);
-		specmtl.a *= 100.0;//255.0; //roughness
+	vec3 cumlight = emissive + ambient * color;
+	
+	for (int i = 0; i < MAX_LIGHTS; i++)
+	{
+		vec3 L = normalize(light[i].pos.xyz - light[i].pos.w * worldSpace.xyz);
+		vec3 S = normalize(light[i].dir.xyz);
 		
-		vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
-		vec3 spec = spec_CT(specmtl.a, light.col.rgb, toLight, V, normal);
-		spec *= 0.02;
-		gl_FragColor.rgb += spec * specmtl.rgb;
+		float d = distance(worldSpace.xyz, light[i].pos.xyz);
+		float f = clamp(light[i].brightness / ((light[i].atten.z * d * d) + (light[i].atten.y * d) + light[i].atten.x), 0.0, 1.0);
+		
+		vec3 spec = 0.6 * clamp(0.04 * specmtl.rgb * pow(litpct, 3.0) * spec_CT(100.0 * specval, light[i].col.rgb, L, V, N), 0.0, 1.0);
+		vec3 diff = 0.95 * litpct * diff_HEMIWRAP(0.3, light[i].col.rgb, c2, N, L);
+		
+		vec3 lit = (diff * color.rgb * f) + (spec * f);
+		if (dot(L, S) < light[i].col.w)
+			lit *= light[i].col.w;
+		
+		cumlight = 1.0 - ((1.0 - cumlight) * (1.0 - lit));
 	}
+	
+	vec3 rim = 0.24 * litpct * other_RIM(8.5, vec3(1.0), N, V);
+	vec3 tc = clamp(cumlight + rim, 0.0, 1.0);
+	
+	float dist = distance(worldSpace.xyz, cameraPos.xyz);
+    float fog = exp(-fogDensity * dist);
+	float dark = (1.0 - (tc.r + tc.g + tc.b) / 3.0) * fogDark;
+    tc = mix(fogColor, mix(tc, fogColor, dark), fog);
+	
+	gl_FragColor.rgb = tc;
+	gl_FragColor.a = 1.0;
 }

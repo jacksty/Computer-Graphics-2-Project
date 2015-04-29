@@ -44,9 +44,9 @@ void main()
 		mat3 tanToObj = mat3(oTangent.x, bitangent.x, oNormal.x,
 							 oTangent.y, bitangent.y, oNormal.y,
 							 oTangent.z, bitangent.z, oNormal.z);
-		normal = normalize((worldMatrix * vec4(bump.xyz * tanToObj, 0.0)).xyz);
+		normal = normalize((vec4(bump.xyz * tanToObj, 0.0) * worldMatrix).xyz);
 	}else if(lightMode != BILLBOARD)
-		normal = normalize((worldMatrix * vec4(normal, 0.0)).xyz);
+		normal = normalize((vec4(normal, 0.0) * worldMatrix).xyz);
 	
 	gl_FragData[0] = vec4(split2ubyte(atan(normal.x, normal.z) / PI), split2ubyte(normal.y)); //spherical coordinates, split into 2 ubyte channels each
 	gl_FragData[1] = vec4(color.rgb, lightMode);
