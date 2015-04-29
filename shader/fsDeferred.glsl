@@ -11,6 +11,7 @@ precision highp float;
 #define BILLBOARD 2.0
 #define SKYBOX 3.0
 #define MAX_LIGHTS 10
+#define PHONG 4.0
 
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
@@ -52,7 +53,7 @@ vec3 unspherize(vec4 norm){
 	float sinphi = sqrt(1.0 - pow(n.y, 2.0));
 	n.z = cos(n.x) * sinphi;
 	n.x = sin(n.x) * sinphi;
-	return n;
+	return normalize(n);
 }
 
 float linearizeDepth(float depthValue){

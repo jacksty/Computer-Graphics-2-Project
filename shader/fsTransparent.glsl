@@ -104,9 +104,9 @@ vec3 other_RIM(float exp, vec3 color, vec3 N, vec3 V)
 void main()
 {
 	vec4 color = texture2D(tex, texpos);
-	//if image is transparent OR
+	//IF image is transparent OR
 	//there is a clipping plane AND 
-	//the fragment is under the clipping plane OR the camera is under the clipping plane
+	//	the fragment is under the clipping plane OR the camera is under the clipping plane
 	//THEN don't draw the fragment (reflection)
 	if( color.a < 0.05 || (clipPlane.w != 0.0 && (sign(worldPos.y - clipPlane.y) == -1.0 || sign(cameraPos.y - clipPlane.y) == -1.0)))
         discard;
