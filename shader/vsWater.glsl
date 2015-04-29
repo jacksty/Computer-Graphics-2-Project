@@ -18,7 +18,6 @@ varying vec3 normal;
 varying vec2 texpos;
 varying float h;
 
-#include "shader/noise.txt"
 
 float height(vec2 p, vec3 d){
 	float s = dot(d.xz, p) + time;
@@ -42,32 +41,16 @@ void main(){
 	h = worldPos.y;
 	vec3 tangent = vec3(0.0, 0.0, 1.0);
 	vec3 bitangent = vec3(1.0,0.0,0.0);
-	float count = 0.0;
-	
-	vec3 wp = worldPos.xyz;
-	wp *= noisescale;
-	wp.yz += vec2(noisetime, -noisetime);
-	float val = noise3(wp);
-    val += 0.5*noise3(2.0*wp);
-    val += 0.25*noise3(4.0*wp);
-    val += 0.125*noise3(8.0*wp);
-	
-	float newY = 0.5 * val;
 	
 	for(float i = 0.5; i < MAX_DIRECTIONS; i+=1.0){
 		vec3 dir = texture2D(directions, vec2(i * directions_size.z, 0.5)).xyz;
 		float s = sign(floor(dot(dir,dir) * 100.0));
-		float dy = derivY(worldPos.xz + newY, dir);
+		float dy = derivY(worldPos.xz, dir);
 		
-		count += s;
 		worldPos.y += height(worldPos.xz, dir) * s;
 		tangent.y += dy * dir.z * s;
 		bitangent.y += dy * dir.x * s;
 	}
-	
-	tangent.z += newY;
-	bitangent.x += newY;
-	worldPos.y += newY;
 	
 	h = worldPos.y - h;
 	normal = normalize(cross(tangent, bitangent));

@@ -51,7 +51,7 @@ function main(){
     	hfov:90,
     	hither:0.1,
     	yon:300,
-    	eye:[0,5,0,1]
+    	eye:[0,15,50,1]
     });
     main.cameraMode = 1;
     main.amb = [0.05,0.05,0.05];
@@ -66,7 +66,7 @@ function main(){
                  1 //brightness
     ]);
     main.lights.push([
-                      [10,10,-5,1], //problem with positional lights
+                      [10,10,-5,1],
                       [0.5,1,0.5,-1],
                       [0,0,0],
                       [1,0.03,0],
@@ -98,11 +98,9 @@ function main(){
 		new tdl.Texture2D(loader, "tex/skyscraper.png"),
 		new tdl.Texture2D(loader, "tex/skyscraper2.png")
 	]);
-	main.city = new City({width: 8, height: 8, pos: [-50, 0, 0, 1]});
+	main.city = new City({width: 8, height: 8, pos: [0, 0, 0, 1]});
 	
     main.entities = [
-                     new Mesh(loader, "ground.mesh", {position: [0,-20,0,1], scaling: [20, 20, 20]}),
-                     main.tank,
 					 main.city
                     ];
     main.billboards = [
@@ -113,19 +111,26 @@ function main(){
                      ];
 					 
 	var emissivePatch = new Mesh(loader, "ground.mesh", {position: [-10,0,0,1], scaling: [20, 20, 20]});
-	emissivePatch.texture = emissivePatch.frame.texture = new tdl.SolidTexture([110,200,110,255]);
+	emissivePatch.texture = new tdl.SolidTexture([110,200,110,255]);
 	main.glowingEnt = [
-					emissivePatch
+					//main.city
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
-                  InfiniteWater(50,50,50,50, {position:[0,-10,0,1], directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], amplitude:0.8, frequency:0.3, speed:0.004, steepness:2})
+                  InfiniteWater(50,50,50,50, 
+                		  {
+                	  position:[0,10,0,1], 
+                	  directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], 
+                	  amplitude:0.8, 
+                	  frequency:0.3, 
+                	  speed:0.004, 
+                	  steepness:2,
+                	  murkiness: 0.055
+                	  }
+                  )
                   ];
+    
     main.wt = 0;
-    main.watReflMatrix = [1,0,0,0,
-                          0,-1,0,0,
-                          0,0,1,0,
-                          0,0,0,1];
     gl.clearColor(0,0,0,0);
     loader.finish();
     setInterval(updateTransparency, 96);
@@ -169,7 +174,7 @@ function init()
     
     main.P = new tdl.ColorTexture({width:256,height:1,pixels:pp,format:gl.LUMINANCE});
 	
-	setInterval(update, 16);
+	setInterval(update, 32);
 	draw();
 }
 
@@ -186,7 +191,6 @@ function update(){
 	main.time = newTime;
 	main.wt += dtime;
 	keyHandler(dtime);
-	
 	
 	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;

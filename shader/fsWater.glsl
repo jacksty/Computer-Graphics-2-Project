@@ -6,6 +6,7 @@ precision highp float;
 #define width winSizeVFOV.x
 #define height winSizeVFOV.y
 
+
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
 	vec4 col; //w <= -1 omnidirectional, else cos for spot
@@ -52,13 +53,16 @@ void main(){
 	color = mix(color, refl, 0.3);
 	float depth = texture2D(depth_texture, screenpos).r;
 	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
-	vec4 cameraSpace = vec4(viewportSpace, depth * 2.0 - 1.0, 1) * linearizeDepth(depth) * invProjMatrix;
-	cameraSpace.w = 1.0;
+	vec4 cameraSpace = vec4(viewportSpace, depth * 2.0 - 1.0, 1.0) * linearizeDepth(depth) * invProjMatrix;
 	vec4 worldSpace = cameraSpace * invViewMatrix;
 	vec3 V = normalize(cameraPos.xyz - worldPos.xyz);
 	
 	vec4 waterSurfaceToFloor = worldSpace - worldPos;
 	float waterDepth = sqrt(dot(waterSurfaceToFloor.xyz, waterSurfaceToFloor.xyz));
+	
+	float a = waterDepth * murkiness; //mix(0.25, 1.0, waterDepth * murkiness);
+	gl_FragColor = vec4(a,a,a,1.0);
+	return;
 	
 	vec3 cumlight = ambient * color.rgb;
 	

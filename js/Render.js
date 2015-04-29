@@ -35,7 +35,7 @@ function draw(){
      * 
      * Skybox must render before water, otherwise the water will have dark edges due to having transparency and blending with the clear color at the yon plane.
      * Water should render before other transparent objects, otherwise there would appear to be a hole in the water where you're looking through the other object.
-     * Unfortunately, this means that transparent objects that are underwater will not render unless the camera is also underwater.
+     * Unfortunately, this means that transparent objects will not show through water.
      */
     
     //skybox
@@ -59,7 +59,6 @@ function draw(){
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
-    gl.disable(gl.CULL_FACE);
 	
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
@@ -67,6 +66,7 @@ function draw(){
 	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
+	gl.disable(gl.CULL_FACE);
 	
 	tdl.requestAnimationFrame(draw);
 }
