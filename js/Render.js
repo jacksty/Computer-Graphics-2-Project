@@ -64,6 +64,7 @@ function draw(){
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
 	main.square.use();
+	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
 	
@@ -94,49 +95,51 @@ function drawTransparentObjects(prog){
 }
 
 function drawGlowingObjects(prog){
-	prog.use();
-	
 	main.glowFBO1.bind();
 	gl.clearColor(0, 0, 0, 0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	main.buffer.use();
+	drawOpaqueObjects(main.buffer);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	prog.use();
+	
 	for (var i = 0; i < main.glowingEnt.length; ++i)
 	{
 		main.cam.draw(prog);
 		prog.setUniform("blur", false);
 		main.glowingEnt[i].draw(prog);
 	}
+	
 	prog.setUniform("tex", main.dummytex);
 	main.glowFBO1.unbind();
 	
 	main.square.use();
 	
-	for (var j = 0; j < 1; ++j)
+	for (var j = 0; j < 2; ++j)
 	{
 		var tex = (j == 0) ? main.glowFBO1.texture : main.glowFBO3.texture;
 		main.glowFBO2.bind();
-		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		main.square.setUniform("tex", tex);
 		main.square.setUniform("blur", true);
-		main.square.setUniform("blur_deltas", [1, 0]);
+		main.square.setUniform("blur_deltas", [1.5, 0]);
 		main.us.draw(main.square);
 		main.square.setUniform("tex", main.dummytex);
 		main.glowFBO2.unbind();
 		
 		main.glowFBO3.bind();
-		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		main.square.setUniform("tex", main.glowFBO2.texture);
 		main.square.setUniform("blur", true);
-		main.square.setUniform("blur_deltas", [0, 1]);
+		main.square.setUniform("blur_deltas", [0, 1.5]);
 		main.us.draw(main.square);
 		main.square.setUniform("tex", main.dummytex);
 		main.glowFBO3.unbind();
 	}
 	main.addTex.use();
 	main.glowFBO2.bind();
-	gl.clearColor(0, 0, 0, 0);
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	main.addTex.setUniform("tex1", main.glowFBO1.texture);
 	main.addTex.setUniform("tex2", main.glowFBO3.texture);
 	main.us.draw(main.addTex);
