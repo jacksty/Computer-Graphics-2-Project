@@ -75,6 +75,7 @@ function draw(){
 function drawOpaqueObjects(prog){
     for(var i = 0; i < main.entities.length; i++)
 		main.entities[i].draw(prog);
+	main.particleSystem.draw(main.cam);
 }
 
 function drawBillboards(prog){

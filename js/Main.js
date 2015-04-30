@@ -105,7 +105,9 @@ function main(){
                     ];
 					
     main.tree = new Tree(loader, [100,100,100]);
-	
+	ParticleSystem.load(loader);
+	main.particleSystem = new ParticleSystem(10000);
+
     main.transEnt = [
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
                      ];
@@ -191,6 +193,7 @@ function update(){
 	main.time = newTime;
 	main.wt += dtime;
 	keyHandler(dtime);
+	main.particleSystem.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;

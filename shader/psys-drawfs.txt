@@ -7,8 +7,7 @@ varying float v_life;
 void main(){
 
     //start the fade-out when there's a half-second of life left
-    float alpha = mix(1.0, 0.0, clamp(1.0 - v_life / 500.0, 0.0, 1.0));
+    float alpha = mix(1.0, 0.0, clamp(1.0-v_life/500.0,0.0,1.0));
     gl_FragColor.rgb = color.rgb;
     gl_FragColor.a = alpha;
-	gl_FragColor = vec4 (1,1,1,1);
 }
