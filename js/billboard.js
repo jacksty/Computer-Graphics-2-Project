@@ -34,36 +34,13 @@
 	this.ibuff = gl.createBuffer();
 	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.ibuff);
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idata, gl.STATIC_DRAW);
-	
-	/*this.vertexData = [];
-	this.vertexData.push(this.pos[0]);
-	this.vertexData.push(this.pos[1]);
-	this.vertexData.push(this.pos[2]);
-
-	this.vb_percopy = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this.vb_percopy);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);*/
-}
-
-Billboard.prototype.updateBuffer = function(){
-	this.vertexData = [];
-	for(var i = 0; i < this.numbb; i++)
-	{
-		this.vertexData.push(pos[0]);
-		this.vertexData.push(pos[1]);
-		this.vertexData.push(pos[2]);
-	}
-
-	this.vb_percopy = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, this.vb_percopy);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(this.vertexData), gl.STATIC_DRAW);
 }
 
 Billboard.prototype.draw = function(prog){
-	console.log("Drawing");
 	//this.texture = new tdl.SolidTexture([0,255,0,255])
 	//this.texture = new tdl.Texture2D(loader,"media/tree4.png");
 	prog.setUniform("tex", this.texture);
+	prog.setUniform("lightmode", 2.0);
 	gl.enable(gl.DEPTH_TEST);
 	gl.depthFunc(gl.LEQUAL);
 	prog.setVertexFormatInstanced([this.vb_common, 0, "position", 3, gl.FLOAT, "coords", 2, gl.FLOAT]);

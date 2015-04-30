@@ -103,9 +103,9 @@ function main(){
     main.entities = [
 					 main.city
                     ];
-    main.billboards = [
-                       new Tree(loader, [10,10,10], [1, 1], 10)
-                       ];
+					
+    main.tree = new Tree(loader, [100,100,100]);
+	
     main.transEnt = [
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
                      ];

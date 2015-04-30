@@ -81,8 +81,7 @@ function drawBillboards(prog){
 	prog.setUniform("normalMap", main.dummytex);
 	prog.setUniform("emitMap", main.dummytex);
 	main.cam.draw(prog);
-	for(var i = 0; i < main.billboards.length; ++i)
-		main.billboards[i].draw(prog);
+	main.tree.draw(prog);
 }
 
 function drawTransparentObjects(prog){
