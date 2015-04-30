@@ -20,11 +20,11 @@ function draw(){
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     main.deferred.use();
     setDeferredUniforms(main.deferred, main.cam);
-    for(var i = 0; i < main.lights.length; ++i){
-    	main.setLight(main.deferred, i);
-        main.us.draw(main.deferred);
-    }
+    for(var i = 0; i < main.lights.length; ++i)
+    	main.setLight(main.deferred, i, true);
+	main.us.draw(main.deferred);
     setDummyTex(main.deferred);
+	
 	
     //pass 3 (forward rendering)
     gl.enable(gl.BLEND);
@@ -35,7 +35,7 @@ function draw(){
      * 
      * Skybox must render before water, otherwise the water will have dark edges due to having transparency and blending with the clear color at the yon plane.
      * Water should render before other transparent objects, otherwise there would appear to be a hole in the water where you're looking through the other object.
-     * Unfortunately, this means that transparent objects that are underwater will not render unless the camera is also underwater.
+     * Unfortunately, this means that transparent objects will not show through water.
      */
     
     //skybox
@@ -59,13 +59,14 @@ function draw(){
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
-    gl.disable(gl.CULL_FACE);
 	
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
 	main.square.use();
+	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
+	gl.disable(gl.CULL_FACE);
 	
 	tdl.requestAnimationFrame(draw);
 }
@@ -94,49 +95,51 @@ function drawTransparentObjects(prog){
 }
 
 function drawGlowingObjects(prog){
-	prog.use();
-	
 	main.glowFBO1.bind();
 	gl.clearColor(0, 0, 0, 0);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	
+	main.buffer.use();
+	drawOpaqueObjects(main.buffer);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	prog.use();
+	
 	for (var i = 0; i < main.glowingEnt.length; ++i)
 	{
 		main.cam.draw(prog);
 		prog.setUniform("blur", false);
 		main.glowingEnt[i].draw(prog);
 	}
+	
 	prog.setUniform("tex", main.dummytex);
 	main.glowFBO1.unbind();
 	
 	main.square.use();
 	
-	for (var j = 0; j < 1; ++j)
+	for (var j = 0; j < 2; ++j)
 	{
 		var tex = (j == 0) ? main.glowFBO1.texture : main.glowFBO3.texture;
 		main.glowFBO2.bind();
-		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		main.square.setUniform("tex", tex);
 		main.square.setUniform("blur", true);
-		main.square.setUniform("blur_deltas", [1, 0]);
+		main.square.setUniform("blur_deltas", [1.5, 0]);
 		main.us.draw(main.square);
 		main.square.setUniform("tex", main.dummytex);
 		main.glowFBO2.unbind();
 		
 		main.glowFBO3.bind();
-		gl.clearColor(0, 0, 0, 0);
 		gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 		main.square.setUniform("tex", main.glowFBO2.texture);
 		main.square.setUniform("blur", true);
-		main.square.setUniform("blur_deltas", [0, 1]);
+		main.square.setUniform("blur_deltas", [0, 1.5]);
 		main.us.draw(main.square);
 		main.square.setUniform("tex", main.dummytex);
 		main.glowFBO3.unbind();
 	}
 	main.addTex.use();
 	main.glowFBO2.bind();
-	gl.clearColor(0, 0, 0, 0);
-	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	//gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	main.addTex.setUniform("tex1", main.glowFBO1.texture);
 	main.addTex.setUniform("tex2", main.glowFBO3.texture);
 	main.us.draw(main.addTex);
@@ -177,10 +180,9 @@ function fillReflectionFBO(water){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	main.deferred.use();
 	setDeferredUniforms(main.deferred, main.cam);
-	for(var i = 0; i < main.lights.length; ++i){
-		main.setLight(main.deferred, i);
-		main.us.draw(main.deferred);
-	}
+	for(var i = 0; i < main.lights.length; ++i)
+		main.setLight(main.deferred, i, true);
+	main.us.draw(main.deferred);
 	setDummyTex(main.deferred);
 	
 	gl.disable(gl.BLEND);
@@ -219,12 +221,20 @@ function setDeferredUniforms(prog, cam){
     prog.setUniform("ambient", tdl.math.divVectorScalar(main.amb, main.lights.length == 0 ? 1 : main.lights.length)); //ambient light value is adjusted by number of passes so that the final ambient lighting stays constant
     prog.setUniform("winSizeVFOV", [gl.canvas.width, gl.canvas.height, main.cam.vfov]);
     prog.setUniform("hitherYon", [main.cam.hither, main.cam.yon]);
+	prog.setUniform("fogDensity", 0.016);
+	prog.setUniform("fogDark", 0.1);
+	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
+	prog.setUniform("c2", [0.45, 0.8, 0.2]);
 }
 
 function setTransparencyUniforms(prog, cam){
 	cam.draw(prog);
 	prog.setUniform("ambient", main.amb);
 	prog.setUniform("clipPlane", [0,0,0,0]);
+	prog.setUniform("fogDensity", 0.016);
+	prog.setUniform("fogDark", 0.1);
+	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
+	prog.setUniform("c2", [0.45, 0.8, 0.2]);
 }
 
 function setWaterUniforms(prog, cam){
@@ -237,6 +247,13 @@ function setWaterUniforms(prog, cam){
     prog.setUniform("invProjMatrix", cam.inverseProjectionMatrix);
     prog.setUniform("reflection", main.reflectionFBO.texture);
     prog.setUniform("specmtl", 32);
+	prog.setUniform("fogDensity", 0.016);
+	prog.setUniform("fogDark", 0.1);
+	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
+	prog.setUniform("G", main.G);
+	prog.setUniform("P", main.G);
+	prog.setUniform("noisescale", 5.0);
+	prog.setUniform("noisetime", 0.0002 * main.wt);
 }
 
 function setDummyTex(prog){

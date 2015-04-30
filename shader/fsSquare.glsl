@@ -38,6 +38,6 @@ vec4 gaussblur11(
     return c;
 }
 
-void main(){	
-	gl_FragColor = (blur == true) ? gaussblur11(tex, tex_size.zw, texpos.st, blur_deltas.st) : texture2D(tex, texpos.st);
+void main(){
+	gl_FragColor = (blur) ? gaussblur11(tex, tex_size.zw, texpos.st, blur_deltas.st) : texture2D(tex, texpos.st);
 }

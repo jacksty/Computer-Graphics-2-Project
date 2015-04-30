@@ -41,18 +41,17 @@ void main(){
 	h = worldPos.y;
 	vec3 tangent = vec3(0.0, 0.0, 1.0);
 	vec3 bitangent = vec3(1.0,0.0,0.0);
-	float count = 0.0;
 	
 	for(float i = 0.5; i < MAX_DIRECTIONS; i+=1.0){
 		vec3 dir = texture2D(directions, vec2(i * directions_size.z, 0.5)).xyz;
 		float s = sign(floor(dot(dir,dir) * 100.0));
 		float dy = derivY(worldPos.xz, dir);
 		
-		count += s;
 		worldPos.y += height(worldPos.xz, dir) * s;
 		tangent.y += dy * dir.z * s;
 		bitangent.y += dy * dir.x * s;
 	}
+	
 	h = worldPos.y - h;
 	normal = normalize(cross(tangent, bitangent));
 	gl_Position = worldPos * viewProjMat;

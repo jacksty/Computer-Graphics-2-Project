@@ -40,40 +40,36 @@ function InfiniteWater(rows, cols, xsize, zsize, args){
 	water.zsize = zsize;
 	
 	water.draw = function(prog, cam){
-		var qrst = []; //yon plane corners
+		var yonCorners = [];
 		var min = [];
 		var max = [];
-		var yoncenter = tdl.add(cam.eye, tdl.mul(cam.yon, tdl.mul(cam.antilook, -1)));
-		var distfromyc = [tdl.mul(cam.right, Math.tan(cam.ah), cam.yon), tdl.mul(cam.up, Math.tan(cam.av), cam.yon)]; //distance from yon center point
+		var yonCenter = tdl.add(cam.eye, tdl.mul(-cam.yon, cam.antilook));
+		var distYC = [tdl.mul(cam.right, Math.tan(cam.ah), cam.yon), tdl.mul(cam.up, Math.tan(cam.av), cam.yon)]; //distance from yon center point [horizontal, vertical]
 		
-		qrst.push(tdl.add(distfromyc[0], distfromyc[1], yoncenter)); //top-right
-		qrst.push(tdl.add(distfromyc[0], tdl.mul(distfromyc[1], -1), yoncenter))//bottom-right
-		qrst.push(tdl.add(tdl.mul(distfromyc[0], -1), tdl.mul(distfromyc[1], -1), yoncenter));//bottom-left
-		qrst.push(tdl.add(tdl.mul(distfromyc[0], -1), distfromyc[1], yoncenter));//top-left
+		yonCorners.push(tdl.add(distYC[0], distYC[1], yonCenter)); //top-right
+		yonCorners.push(tdl.add(distYC[0], tdl.mul(distYC[1], -1), yonCenter))//bottom-right
+		yonCorners.push(tdl.add(tdl.mul(distYC[0], -1), tdl.mul(distYC[1], -1), yonCenter));//bottom-left
+		yonCorners.push(tdl.add(tdl.mul(distYC[0], -1), distYC[1], yonCenter));//top-left
 		
 		min.push(cam.eye[0], cam.eye[1], cam.eye[2]);
 		max.push(cam.eye[0], cam.eye[1], cam.eye[2]);
 		
 		for(var i = 1; i < 4; ++i){
-			min[0] = Math.min(min[0], qrst[i][0]);
-			min[1] = Math.min(min[1], qrst[i][1]);
-			min[2] = Math.min(min[2], qrst[i][2]);
+			min[0] = Math.min(min[0], yonCorners[i][0]);
+			min[1] = Math.min(min[1], yonCorners[i][1]);
+			min[2] = Math.min(min[2], yonCorners[i][2]);
 			
-			max[0] = Math.max(max[0], qrst[i][0]);
-			max[1] = Math.max(max[1], qrst[i][1]);
-			max[2] = Math.max(max[2], qrst[i][2]);
+			max[0] = Math.max(max[0], yonCorners[i][0]);
+			max[1] = Math.max(max[1], yonCorners[i][1]);
+			max[2] = Math.max(max[2], yonCorners[i][2]);
 		}
 		
-		min = [min[0] / this.xsize, min[2] / this.zsize];
-		max = [max[0] / this.xsize, max[2] / this.zsize];
+		min = [Math.floor(min[0] / this.xsize), Math.floor(min[2] / this.zsize)];
+		max = [Math.ceil(max[0] / this.xsize), Math.ceil(max[2] / this.zsize)];
 		
-		var threshold = 0.0002; //correct for floating point error
-		for(var i = 0; i < 2; ++i){
-			var minSign = min[i] < threshold ? (min[i] < -threshold ? -1 : 0) : 1;
-			var maxSign = max[i] < threshold ? (max[i] < -threshold ? -1 : 0) : 1;
-			min[i] = Math.ceil(Math.abs(min[i])) * minSign;
-			max[i] = Math.ceil(Math.abs(max[i])) * maxSign;
-		}
+		//console.log("min: ", min, "max: ", max, "cam: ", [cam.eye[0] / this.xsize, cam.eye[2] / this.zsize]);
+		
+		
 		
 		for(var i = min[0]; i <= max[0]; ++i)
 			for(var j = min[1]; j <= max[1]; ++j){
@@ -113,7 +109,7 @@ function StaticWater(rows, cols, xsize, zsize, args){
 		if(this[names[i]] === undefined)
 			this[names[i]] = 1.0;
 	this.setPos(this.position);
-	this.murkiness = this.murkiness === undefined ? 0.01 : this.murkiness; //transparency factor for the water: 1 = completely opaque. 0.005 - 0.05 is probably a good starting range
+	this.murkiness = this.murkiness === undefined ? 0.05 : this.murkiness; //transparency factor for the water: 1 = completely opaque, 0 = clear
 	this.directions = new tdl.ColorTexture({width:maxdirs, height:1, pixels:new Float32Array(this.directions), type:gl.FLOAT});
 }
 
@@ -128,14 +124,14 @@ StaticWater.prototype.setPos = function(newpos){
 	this.grid.matrix = tdl.translation(newpos);
 }
 
-StaticWater.prototype.draw = StaticWater.prototype.render;
-
 StaticWater.prototype.render = function(prog){
 	prog.setUniform("afts", [this.amplitude, this.frequency, this.speed * main.wt, this.steepness]);
 	prog.setUniform("directions", this.directions);
 	prog.setUniform("murkiness", this.murkiness);
 	this.grid.draw(prog);
 }
+
+StaticWater.prototype.draw = StaticWater.prototype.render;
 
 
 function HeightMap(rows, cols, xsize, zsize, args){
