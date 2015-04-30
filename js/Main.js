@@ -83,9 +83,9 @@ function main(){
     });
     main.reflectionFBO = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE);
     
-	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
-	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
-	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
+	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);

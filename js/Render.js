@@ -60,6 +60,9 @@ function draw(){
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
 	
+	gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
+	
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
 	main.square.use();
