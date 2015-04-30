@@ -59,6 +59,7 @@ function draw(){
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
+	gl.disable(gl.CULL_FACE);
 	
 	gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
@@ -69,7 +70,6 @@ function draw(){
 	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
-	gl.disable(gl.CULL_FACE);
 	
 	tdl.requestAnimationFrame(draw);
 }
