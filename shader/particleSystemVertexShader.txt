@@ -1,0 +1,31 @@
+attribute vec2 position;
+
+uniform mat4 viewMatrix;
+uniform mat4 projMatrix;
+
+uniform sampler2D postex;
+uniform sampler2D veltex;
+
+uniform float size;
+
+varying float v_life;
+
+void main(){
+    
+    vec4 c = texture2D(postex, position);
+	vec4 v = texture2D(veltex, position);
+    vec4 p = vec4(c.xyz, 1.0);
+
+    c = texture2D(veltex, position);
+    v_life = c.w;
+
+    //this isn't really necessary since we draw the points with
+    //alpha=0 when their life is exhausted
+    if( v_life <= 0.0 )
+        gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
+    else
+        gl_Position = p * viewMatrix * projMatrix;
+    
+    gl_PointSize = size;
+    
+}
