@@ -34,8 +34,8 @@ DynamicWater.init = function(){
 	DynamicWater.fbos = [];
 }
 
-function InfiniteWater(rows, cols, xsize, zsize, args){
-	var water = new StaticWater(rows, cols, xsize, zsize, args);
+function InfiniteWater(loader, rows, cols, xsize, zsize, args){
+	var water = new StaticWater(loader, rows, cols, xsize, zsize, args);
 	water.xsize = xsize;
 	water.zsize = zsize;
 	
@@ -84,10 +84,10 @@ function InfiniteWater(rows, cols, xsize, zsize, args){
 
 
 
-function StaticWater(rows, cols, xsize, zsize, args){
+function StaticWater(loader, rows, cols, xsize, zsize, args){
 	this.prog = main.water;
 	this.position = [0,0,0,1];
-	this.grid = new HeightMap(rows, cols, xsize, zsize, args);
+	this.grid = new HeightMap(loader, rows, cols, xsize, zsize, args);
 	this.grid.matrix = tdl.translation(this.position);
 	var dir = [0,0,0,0];
 	var maxdirs = 4;
@@ -134,7 +134,7 @@ StaticWater.prototype.render = function(prog){
 StaticWater.prototype.draw = StaticWater.prototype.render;
 
 
-function HeightMap(rows, cols, xsize, zsize, args){
+function HeightMap(loader, rows, cols, xsize, zsize, args){
 	var dyWater = false;
 	if(args!== undefined){
 		this.matrix = args.position;
@@ -143,7 +143,7 @@ function HeightMap(rows, cols, xsize, zsize, args){
 			dyWater = args.dyWater;
 	}
 	this.matrix = tdl.translation(this.matrix === undefined ? [0,0,0,1] : this.matrix);
-	this.texture = this.texture === undefined ? new tdl.textures.SolidTexture([50,125,225,255]) : this.texture;
+	this.texture = this.texture === undefined ? new tdl.textures.SolidTexture([50,125,225,255]) : new tdl.Texture2D(loader, getInProjectPath("t", this.texture));
 	
 	if(rows * cols > 65536)
 		throw new Error("Heightmap too large!");

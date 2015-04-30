@@ -117,7 +117,7 @@ function main(){
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
-                  InfiniteWater(50,50,50,50, 
+                  InfiniteWater(loader, 50,50,50,50, 
                 		  {
                 	  position:[0,10,0,1], 
                 	  directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], 

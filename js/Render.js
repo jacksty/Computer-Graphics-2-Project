@@ -45,6 +45,7 @@ function draw(){
 	main.skybox.draw(main.sky);
 	
 	//water
+	gl.enable(gl.CULL_FACE);
     main.water.use();
     setWaterUniforms(main.water, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
@@ -53,7 +54,6 @@ function draw(){
     main.water.setUniform("reflection", main.dummytex);
     
     //other transparent objects
-    gl.enable(gl.CULL_FACE);
     main.transparent.use();
     setTransparencyUniforms(main.transparent, main.cam);
     for(var i = 0; i < main.lights.length; ++i)

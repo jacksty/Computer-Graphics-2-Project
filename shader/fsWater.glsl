@@ -1,5 +1,7 @@
 precision highp float;
 #define MAX_LIGHTS 3
+#define WATER_REFRACTION 1.66 /*1.33*/
+#define WATER_REFRACTION2 2.7556 /*1.7689*/
 #define hither hitherYon.x
 #define yon hitherYon.y
 #define vfov winSizeVFOV.z
@@ -50,7 +52,6 @@ void main(){
 	vec2 screenpos = gl_FragCoord.xy / vec2(width,height);
 	vec3 color = texture2D(tex, texpos).rgb;
 	vec3 refl = texture2D(reflection, screenpos + normal.xz * h * 0.08).rgb;
-	color = mix(color, refl, 0.3);
 	float depth = texture2D(depth_texture, screenpos).r;
 	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
 	vec4 cameraSpace = vec4(viewportSpace, depth * 2.0 - 1.0, 1.0) * linearizeDepth(depth) * invProjMatrix;
@@ -59,10 +60,15 @@ void main(){
 	
 	vec4 waterSurfaceToFloor = worldSpace - worldPos;
 	float waterDepth = sqrt(dot(waterSurfaceToFloor.xyz, waterSurfaceToFloor.xyz));
+	float angInc = dot(V, normal);
+	float angRef = sqrt(1.0 - (1.0 - pow(angInc, 2.0) / WATER_REFRACTION2));
+	float amtReflected = (pow((WATER_REFRACTION * angRef - angInc) / (WATER_REFRACTION * angRef + angInc), 2.0) + pow((angRef - WATER_REFRACTION * angInc) / (angRef + WATER_REFRACTION * angInc), 2.0)) * 0.5;
+	color = refl * amtReflected + color * (1.0 - amtReflected);
+	//color = mix(refl, color, amtReflected);
 	
-	float a = waterDepth * murkiness; //mix(0.25, 1.0, waterDepth * murkiness);
-	gl_FragColor = vec4(a,a,a,1.0);
-	return;
+	/*float a = waterDepth * murkiness; //mix(0.25, 1.0, waterDepth * murkiness);
+	gl_FragColor = vec4(a,a,a,1.0);//vec4(a,a,a,1.0);
+	return;*/
 	
 	vec3 cumlight = ambient * color.rgb;
 	
@@ -92,5 +98,5 @@ void main(){
     tc = mix(fogColor, mix(tc, fogColor, dark), fog);
 	
 	gl_FragColor.rgb = tc;
-	gl_FragColor.a = mix(0.25, 1.0, waterDepth * murkiness);
+	gl_FragColor.a = 1.0;//mix(0.25, 1.0, waterDepth * murkiness);
 }
