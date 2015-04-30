@@ -60,10 +60,6 @@ void main(){
 	vec4 waterSurfaceToFloor = worldSpace - worldPos;
 	float waterDepth = sqrt(dot(waterSurfaceToFloor.xyz, waterSurfaceToFloor.xyz));
 	
-	float a = waterDepth * murkiness; //mix(0.25, 1.0, waterDepth * murkiness);
-	gl_FragColor = vec4(a,a,a,1.0);
-	return;
-	
 	vec3 cumlight = ambient * color.rgb;
 	
 	for(int i = 0; i < MAX_LIGHTS; ++i){
