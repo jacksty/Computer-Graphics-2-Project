@@ -1,0 +1,9 @@
+"use strict"
+
+function ParticleSystem(){
+
+}
+
+ParticleSystem.prototype.draw = function(prog){
+
+}

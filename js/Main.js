@@ -83,9 +83,9 @@ function main(){
     });
     main.reflectionFBO = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE);
     
-	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
-	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
-	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
+	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
@@ -103,9 +103,9 @@ function main(){
     main.entities = [
 					 main.city
                     ];
-    main.billboards = [
-                       new Tree(loader, [10,10,10], [1, 1], 10)
-                       ];
+					
+    main.tree = new Tree(loader, [100,100,100]);
+	
     main.transEnt = [
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
                      ];
@@ -113,7 +113,7 @@ function main(){
 	var emissivePatch = new Mesh(loader, "ground.mesh", {position: [-10,0,0,1], scaling: [20, 20, 20]});
 	emissivePatch.texture = new tdl.SolidTexture([110,200,110,255]);
 	main.glowingEnt = [
-					//main.city
+					emissivePatch
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
