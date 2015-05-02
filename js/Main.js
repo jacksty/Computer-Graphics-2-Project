@@ -83,9 +83,9 @@ function main(){
     });
     main.reflectionFBO = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height, gl.RGBA, gl.UNSIGNED_BYTE);
     
-	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
-	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
-	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width / 2, gl.canvas.height / 2);
+	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
@@ -105,7 +105,9 @@ function main(){
                     ];
 					
     main.tree = new Tree(loader, [100,100,100]);
-	
+	ParticleSystem.load(loader);
+	main.particleSystem = new ParticleSystem(10000);
+
     main.transEnt = [
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
                      ];
@@ -117,7 +119,7 @@ function main(){
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
-                  InfiniteWater(50,50,50,50, 
+                  InfiniteWater(loader, 50,50,50,50, 
                 		  {
                 	  position:[0,10,0,1], 
                 	  directions:[tdl.normalize([1,0,-0.33]), [1,0,0]], 
@@ -191,6 +193,7 @@ function update(){
 	main.time = newTime;
 	main.wt += dtime;
 	keyHandler(dtime);
+	main.particleSystem.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;

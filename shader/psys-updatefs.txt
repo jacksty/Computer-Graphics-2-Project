@@ -1,0 +1,34 @@
+precision highp float;
+
+varying vec2 v_texcoord;
+
+uniform sampler2D postex;   //xyz=pos, w=life left
+uniform sampler2D veltex;   //xyz=vel
+uniform vec3 g;            //gravity
+uniform float elapsed;
+uniform float mode;     //0=position, 1=velocity
+
+void main(){
+    vec4 c = texture2D(postex,v_texcoord);
+    vec3 pos = c.xyz;
+    
+    c=texture2D(veltex,v_texcoord);
+    vec3 vel = c.xyz;
+    float lifeleft = c.w;
+
+    pos = pos + elapsed * vel;
+    
+    vel = vel + g * elapsed;
+        
+    lifeleft -= elapsed;
+    if(lifeleft < 0.0 )
+        lifeleft = 0.0;
+
+    if( mode == 0.0 )
+        gl_FragColor = vec4(pos.xyz,1.0);
+    else
+        gl_FragColor = vec4(vel.xyz,lifeleft);
+}
+
+    
+    

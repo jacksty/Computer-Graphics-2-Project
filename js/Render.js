@@ -45,6 +45,7 @@ function draw(){
 	main.skybox.draw(main.sky);
 	
 	//water
+	gl.enable(gl.CULL_FACE);
     main.water.use();
     setWaterUniforms(main.water, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
@@ -53,12 +54,15 @@ function draw(){
     main.water.setUniform("reflection", main.dummytex);
     
     //other transparent objects
-    gl.enable(gl.CULL_FACE);
     main.transparent.use();
     setTransparencyUniforms(main.transparent, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
+	gl.disable(gl.CULL_FACE);
+	
+	gl.enable(gl.BLEND);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 	
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
@@ -66,7 +70,6 @@ function draw(){
 	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
-	gl.disable(gl.CULL_FACE);
 	
 	tdl.requestAnimationFrame(draw);
 }
@@ -75,6 +78,7 @@ function draw(){
 function drawOpaqueObjects(prog){
     for(var i = 0; i < main.entities.length; i++)
 		main.entities[i].draw(prog);
+	main.particleSystem.draw(main.cam);
 }
 
 function drawBillboards(prog){
