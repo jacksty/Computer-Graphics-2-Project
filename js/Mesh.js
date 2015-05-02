@@ -78,44 +78,108 @@ Mesh.prototype.setup = function(loader, ab){
     var line;
     
     line = readLine();
-    if( line !== "mesh_4" )
+    if( line !== "mesh_5" )
         throw new Error("Not correct mesh header");
 
     var nv;
     var ni;
+	this.hasbones = true;
+	this.centroids = {};
     
-    while(1){
+    while(true){
         line = readLine();
         var lst = line.split(" ");
         if( line === "end" )
             break;
-        else if(lst[0] === "object"){
+        else if(lst[0] === "object")
+		{
         	this.objs.push(new MeshObject(lst));
         }
         else if( lst[0] === "vertices" )
             nv = parseInt(lst[1],10);       //num vertices * num floats per vert
         else if( lst[0] === "indices" )
             this.ni = parseInt(lst[1],10);
-        else if( lst[0] === "vertex_data"){
+        else if( lst[0] === "vertex_data")
+		{
             var vdata = new Float32Array(ab,idx,nv);
             idx += vdata.byteLength;
         }
-        else if( lst[0] === "index_data"){
+        else if( lst[0] === "index_data")
+		{
             var idata = new Uint16Array(ab,idx,this.ni);
             idx += idata.byteLength;
         }
+		else if( lst[0] === "centroid" )
+		{
+            this.centroids[lst[1]] = [parseFloat(lst[2]),
+                parseFloat(lst[3]), parseFloat(lst[4])];
+        }
+        else if( lst[0] === "numbones" )
+            this.numbones = parseInt(lst[1],10);
+        else if ( lst[0] === "numframes" )
+		{
+            this.numframes = parseInt(lst[1],10);
+            console.log(this.numframes,"frames");
+        }
+        else if( lst[0] === "maxdepth" )
+            ;
+        else if( lst[0] === "bonenames" )
+            ;//var bonenames = lst.slice(1);
         else if(lst[0] === "texture_file")
         	this.texture = new tdl.Texture2D(loader, getInProjectPath("t",lst[1]));
         else if(lst[0] === "normal_map")
         	this.bump = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
-        else if(lst[0] === "specular_map"){
+        else if(lst[0] === "specular_map")
         	this.specmtl = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
-        }
         else if(lst[0] === "emissive_map")
         	this.emitTex = new tdl.Texture2D(loader, getInProjectPath("t", lst[1]));
-        else{
+		else if( lst[0] === "heads" || lst[0] === "tails" || lst[0] === "quaternions" || lst[0] === "translations" ||
+            lst[0] === "matrices" )
+		{
+            var numbytes = parseInt(lst[1],10);
+            try{
+                var X = new Float32Array( ab, idx, numbytes/4 );
+            }
+            catch(e){
+                console.log(lst,ab,idx,numbytes/4);
+                throw(e);
+            }
+                
+            idx += numbytes;
+            if( lst[0] === "heads" ){
+                this.bonetex = new tdl.ColorTexture({
+                    width: this.numbones,
+                    height: 1,
+                    pixels: X,
+                    format: gl.RGBA,
+                    type: gl.FLOAT
+                });
+                var headdata=X;
+            }
+            else if( lst[0] === "quaternions" ){
+                this.quattex = new tdl.ColorTexture({
+                    width: this.numbones,
+                    height: this.numframes,
+                    pixels: X,
+                    format: gl.RGBA,
+                    type: gl.FLOAT
+                });
+
+            }
+            else if( lst[0] === "matrices" ){
+                this.mattex = new tdl.ColorTexture({
+                    width: this.numbones*4,
+                    height: this.numframes,
+                    pixels: X,
+                    format: gl.RGBA,
+                    type: gl.FLOAT
+                });
+            }
+        }
+        else
+		{
             console.log("UNEX",lst,line.length,line);
-            throw new Error("Unexpected");
+            //throw new Error("Unexpected");
         }
     }
     
@@ -129,6 +193,19 @@ Mesh.prototype.setup = function(loader, ab){
     	this.emitTex = new tdl.textures.SolidTexture([0,0,0,255]);
     if(this.bump === undefined)
     	this.bump = new tdl.textures.SolidTexture([255,255,255,0]);
+	if(!this.bonetex)
+	{
+        this.bonetex = new tdl.SolidTexture([0,0,0,255]);
+		this.quattex = new tdl.SolidTexture([0,0,0,255]);
+		this.transtex = new tdl.SolidTexture([0,0,0,255]);
+		this.hasbones = false;
+		this.numbones = 0;
+		this.numframes = 0;
+	}
+	if(!this.quattex)
+        this.quattex = new tdl.SolidTexture([0,0,0,255]);
+	if(!this.transtex)
+        this.transtex = new tdl.SolidTexture([0,0,0,255]);
     
     this.texture.setParameter(gl.TEXTURE_WRAP_S, gl.REPEAT);
     this.texture.setParameter(gl.TEXTURE_WRAP_T, gl.REPEAT);
@@ -142,14 +219,35 @@ Mesh.prototype.setup = function(loader, ab){
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idata, gl.STATIC_DRAW);
 }
 
-Mesh.prototype.draw = function(prog){
+Mesh.prototype.draw = function(prog, currframe){
     prog.setUniform("alpha", this.alpha, true);
 	prog.setUniform("worldMatrix", this.matrix);
+	prog.setUniform("texture",this.texture);
+    prog.setUniform("bonetex",this.bonetex);
+    prog.setUniform("quattex",this.quattex);
+	prog.setUniform("hasbones",this.hasbones);
+	prog.setUniform("currframe", currframe === undefined ? 0 : currframe);
 	
     gl.bindBuffer(gl.ARRAY_BUFFER,this.vbuff);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER,this.ibuff);
     
-    prog.setVertexFormat("position",3,gl.FLOAT,"coords",2,gl.FLOAT,"norm",3,gl.FLOAT,"tang",3,gl.FLOAT);
+    prog.setVertexFormat(
+        "a_position", 3, gl.FLOAT,
+        "a_texcoord", 2, gl.FLOAT,
+        "a_normal", 3, gl.FLOAT,
+        "a_weight", 4, gl.FLOAT,
+        "a_boneidx", 4, gl.FLOAT,
+		"a_tang", 3, gl.FLOAT
+    );
+	//prog.setVertexFormat("position",3,gl.FLOAT,"coords",2,gl.FLOAT,"norm",3,gl.FLOAT,"tang",3,gl.FLOAT);
+	/*prog.setVertexFormat(
+        "position", 3, gl.FLOAT,
+        "coords", 2, gl.FLOAT,
+        "norm", 3, gl.FLOAT,
+        "a_weight", 4, gl.FLOAT,
+        "a_boneidx", 4, gl.FLOAT,
+		"tang", 3, gl.FLOAT
+    );*/
     
     prog.setUniform("tex", this.texture);
     prog.setUniform("lightMode", this.lightMode);

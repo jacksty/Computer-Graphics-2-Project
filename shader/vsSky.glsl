@@ -1,4 +1,4 @@
-attribute vec4 position;
+attribute vec4 a_position;
 
 uniform vec4 cameraPos;
 uniform mat4 viewProjMat;
@@ -12,7 +12,7 @@ varying vec3 oTangent;
 varying vec2 texpos;
 
 void main(){
-    vec4 p = position * worldMat;
+    vec4 p = a_position * worldMat;
     p.xyz += cameraPos.xyz;
     p.w=1.0;
     v_worldPos = p;

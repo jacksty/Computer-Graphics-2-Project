@@ -6,12 +6,10 @@ precision highp float;
 #define width winSizeVFOV.x
 #define height winSizeVFOV.y
 #define vfov winSizeVFOV.z
-#define LAMBERT 0.0
+#define PHONG 0.0
 #define COOKTORRENCE 1.0
 #define BILLBOARD 2.0
-#define SKYBOX 3.0
 #define MAX_LIGHTS 10
-#define PHONG 4.0
 
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
@@ -140,12 +138,11 @@ void main()
 	float lightMode = texture2D(colorTex, texCoord).w;
 	vec2 viewportSpace = vec2(gl_FragCoord.x / (width - 1.0), gl_FragCoord.y / (height - 1.0)) * 2.0 - 1.0;
 	vec4 cameraSpace = vec4(viewportSpace, texture2D(depth_texture, texCoord).r * 2.0 - 1.0, 1.0) * depth * invProjMatrix;
-	vec4 worldSpace = cameraSpace * invViewMatrix;
+	vec4 worldSpace = cameraSpace * invViewMatrix * 0.5;
 	vec3 V = normalize(cameraPos.xyz - worldSpace.xyz);
 	vec4 specmtl = texture2D(specularTex, texCoord);
 	float specval = specmtl.a * 4.0;
-	
-	gl_FragColor = vec4(emissive + ambient * color, 1.0);
+	float specmode = 1.0 - floor(lightMode / 2.0);
 	
 	float litpct = 1.0;
 	
@@ -159,7 +156,7 @@ void main()
 		float d = distance(worldSpace.xyz, light[i].pos.xyz);
 		float f = clamp(light[i].brightness / ((light[i].atten.z * d * d) + (light[i].atten.y * d) + light[i].atten.x), 0.0, 1.0);
 		
-		vec3 spec = 0.6 * clamp(0.04 * specmtl.rgb * pow(litpct, 3.0) * spec_CT(100.0 * specval, light[i].col.rgb, L, V, N), 0.0, 1.0);
+		vec3 spec = 0.8 * specmode * clamp(0.04 * specmtl.rgb * pow(litpct, 3.0) * spec_CT(100.0 * specval, light[i].col.rgb, L, V, N), 0.0, 1.0);
 		vec3 diff = 0.95 * litpct * diff_HEMIWRAP(0.3, light[i].col.rgb, c2, N, L);
 		
 		vec3 lit = (diff * color.rgb * f) + (spec * f);
@@ -169,7 +166,7 @@ void main()
 		cumlight = 1.0 - ((1.0 - cumlight) * (1.0 - lit));
 	}
 	
-	vec3 rim = 0.24 * litpct * other_RIM(8.5, vec3(1.0), N, V);
+	vec3 rim = 0.24 * specmode * litpct * other_RIM(8.5, vec3(1.0), N, V);
 	vec3 tc = clamp(cumlight + rim, 0.0, 1.0);
 	
 	float dist = distance(worldSpace.xyz, cameraPos.xyz);
