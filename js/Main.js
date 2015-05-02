@@ -112,9 +112,8 @@ function main(){
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
                      ];
 					 
-	main.emissivePatch = new Mesh(loader, "ground.mesh", {position: [-10,0,0,1], scaling: [20, 20, 20]});
 	main.glowingEnt = [
-					main.emissivePatch
+					new Mesh(loader, "open_sign.mesh", {right: [0,-1,0,0], up: [0,0,-1,0], back: [-1,0,0,0], position: [0,14,32.5,1]})
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
@@ -126,7 +125,8 @@ function main(){
                 	  frequency:0.3, 
                 	  speed:0.004, 
                 	  steepness:2,
-                	  murkiness: 0.055
+                	  murkiness: 0.055,
+					  tex: "water.png"
                 	  }
                   )
                   ];
@@ -139,8 +139,6 @@ function main(){
 
 function init()
 {
-	main.emissivePatch.texture = new tdl.SolidTexture([110,200,110,255]);
-	
 	var gg = new Uint8Array(256*4);
     var ctr=0;
     for(var i=0;i<256;++i){
