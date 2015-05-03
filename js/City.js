@@ -30,7 +30,8 @@ function City(opts) {
 
 City.initialize = function(loader, dir, textures) {
 	City.skyscraper = new Mesh(loader, dir);
-	main.skyscraperBump = new tdl.Texture2D(loader, "tex/sillyNormal.png");
+	main.skyscraperBump = new tdl.Texture2D(loader, "tex/skyscraperNormal.png");
+	main.skyscraperSpec = new tdl.Texture2D(loader, "tex/skyscraperSpecular.png");
 	City.textures = textures;
 }
 

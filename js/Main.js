@@ -104,7 +104,7 @@ function main(){
     main.overlayFBO = new tdl.Framebuffer(1, 1);
 	
 	main.overlayFBO.bind();
-	gl.clearColor(0.8,0.1,0.1,0.1);
+	gl.clearColor(0.5,0.05,0.05,0.6);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	main.overlayFBO.unbind();
 	
@@ -165,6 +165,8 @@ function main(){
 function init()
 {
 	City.skyscraper.bump = main.skyscraperBump;
+	City.skyscraper.specmtl = main.skyscraperSpec;
+	
 	var gg = new Uint8Array(256*4);
     var ctr=0;
     for(var i=0;i<256;++i){
