@@ -58,6 +58,7 @@ Camera.prototype.orientFromCOI = function(coi, up){
 	this.antilook = tdl.normalize(tdl.sub(this.eye, coi));
 	this.right = tdl.normalize(tdl.cross(up, this.antilook));
 	this.up = tdl.cross(this.antilook, this.right);
+	this.computePM();
 	this.computeVPM();
 }
 
@@ -100,6 +101,7 @@ Camera.prototype.computeVPM = function(){
 	              0, 0, 0, 1];
 	
 	this.viewMatrixInverse = tdl.mul(viewRotate, viewTranslate);
+	//console.log(this.eye);
 }
 
 Camera.prototype.strafe = function(vec){
@@ -151,4 +153,7 @@ Camera.prototype.draw = function(program){
 	program.setUniform("cameraV", this.up, true);
 	program.setUniform("cameraW", tdl.mul(-1, this.antilook), true);
 	program.setUniform("reflectionMatrix", this.noReflMatrix, true);
+	program.setUniform("projMatrix", this.projMatrix);
+	program.setUniform("viewMatrix", this.viewMatrix);
+	program.setUniform("hitheryon", [this.hither, this.yon, this.yon - this.hither], true);
 }

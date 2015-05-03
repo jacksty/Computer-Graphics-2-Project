@@ -1,4 +1,7 @@
 function draw(){
+	drawToShadowBuffer(main.shadowcam, main.shadowFBO, main.blurFBO, main.shadowProg, main.blurProg, true);
+	gl.clearColor(0, 0, 0, 0);
+	//return;
 	//pass 1
 	if(main.wat[0] !== undefined)
 		fillReflectionFBO(main.wat[0]);
@@ -9,6 +12,7 @@ function draw(){
     main.cam.draw(main.buffer);
     main.buffer.setUniform("clipPlane", [0,0,0,0]);
     drawOpaqueObjects(main.buffer);
+	main.particleSystem.draw(main.buffer, main.cam);
     main.billboard.use();
     main.cam.draw(main.billboard);
     drawBillboards(main.billboard);
@@ -24,7 +28,6 @@ function draw(){
     	main.setLight(main.deferred, i, true);
 	main.us.draw(main.deferred);
     setDummyTex(main.deferred);
-	
 	
     //pass 3 (forward rendering)
     gl.enable(gl.BLEND);
@@ -78,7 +81,11 @@ function draw(){
 function drawOpaqueObjects(prog){
     for(var i = 0; i < main.entities.length; i++)
 		main.entities[i].draw(prog);
-	main.particleSystem.draw(main.cam);
+}
+
+function drawParticles(prog, camera)
+{
+	main.particleSystem.draw(camera);
 }
 
 function drawBillboards(prog){
@@ -104,6 +111,7 @@ function drawGlowingObjects(prog){
 	
 	main.buffer.use();
 	drawOpaqueObjects(main.buffer);
+	main.particleSystem.draw(prog, main.cam);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	prog.use();
 	
@@ -161,6 +169,49 @@ function drawWater(prog, cam){
     	main.wat[i].draw(prog, cam);
 }
 
+function drawToShadowBuffer(camera, use_blur)
+{
+	if (use_blur == undefined)
+		use_blur = true;
+	
+	main.mc = 5;
+    main.sf = 20;
+	
+	main.shadowFBO.texture.setParameter(gl.TEXTURE_MIN_FILTER,gl.LINEAR);
+    
+    main.shadowFBO.bind();
+    gl.clearColor(1,1,1,1);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    main.shadow.use();
+    main.shadow.setUniform("scale_factor", main.sf);
+	camera.draw(main.shadow);
+    drawOpaqueObjects(main.shadow);
+    main.shadowFBO.unbind();
+	//return;
+    main.blur.use();
+    main.blur.setUniform("scale_factor",1.0);
+    main.blurFBO.bind();
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    main.blur.setUniform("tex", main.shadowFBO.texture);
+    if(use_blur)
+        main.blur.setUniform("deltas",[1,0]);
+    else
+        main.blur.setUniform("deltas",[0,0]);
+    main.us.draw(main.blur);
+    main.blurFBO.unbind();
+    main.blur.setUniform("tex", main.blurFBO.texture);
+    main.shadowFBO.bind();
+    if(use_blur)
+        main.blur.setUniform("deltas",[0,1]);
+    else
+        main.blur.setUniform("deltas",[0,0]);
+        
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+    main.us.draw(main.blur);
+    main.shadowFBO.unbind();
+    main.blur.setUniform("tex", main.dummytex);
+}
+
 function fillReflectionFBO(water){
 	gl.disable(gl.BLEND);
 	main.deferredFBO.bind();
@@ -214,6 +265,7 @@ function fillReflectionFBO(water){
 //UNIFORM SETTERS
 function setDeferredUniforms(prog, cam){
 	cam.draw(prog);
+	prog.setUniform("shadowbuffer", main.shadowFBO.texture);
 	prog.setUniform("normalTex", main.deferredFBO.textures[0]);
     prog.setUniform("colorTex", main.deferredFBO.textures[1]);
     prog.setUniform("emissiveTex", main.deferredFBO.textures[2]);
@@ -228,6 +280,11 @@ function setDeferredUniforms(prog, cam){
 	prog.setUniform("fogDark", 0.1);
 	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
 	prog.setUniform("c2", [0.45, 0.8, 0.2]);
+	prog.setUniform("light_hitheryon",[main.shadowcam.hither, main.shadowcam.yon, main.shadowcam.yon - main.shadowcam.hither]);
+    prog.setUniform("light_viewMatrix",main.shadowcam.viewMatrix);
+    prog.setUniform("light_projMatrix",main.shadowcam.projMatrix);
+	prog.setUniform("magic_constant", main.mc);
+    prog.setUniform("scale_factor", main.sf);
 }
 
 function setTransparencyUniforms(prog, cam){
@@ -265,4 +322,5 @@ function setDummyTex(prog){
     prog.setUniform("emissiveTex", main.dummytex);
     prog.setUniform("specularTex", main.dummytex);
     prog.setUniform("depth_texture", main.dummytex);
+	prog.setUniform("shadow_buffer", main.dummytex);
 }

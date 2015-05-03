@@ -40,7 +40,9 @@ function main(){
 				   ["sky", "vsSky.glsl", "fsSky.glsl"],
 				   ["square", "vsSquare.glsl", "fsSquare.glsl"],
 				   ["addTex", "vsSquare.glsl", "fsAddTex.glsl"],
-				   ["selfEmissive", "vsBuffer.glsl", "fsSquare.glsl"]
+				   ["selfEmissive", "vsBuffer.glsl", "fsSquare.glsl"],
+				   ["shadow", "vsShadow.glsl", "fsShadow.glsl"],
+				   ["blur", "vsBlur.glsl", "fsBlur.glsl"]
                   ];
     loadShaders(loader, shaders);
     
@@ -48,12 +50,23 @@ function main(){
     DynamicWater.init();
     main.worldMat = tdl.translation([0,0,0,1]);
     main.cam = new Camera({
-    	hfov:90,
-    	hither:0.1,
-    	yon:300,
-    	eye:[0,15,50,1]
+    	hfov: 90,
+    	hither: 0.1,
+    	yon: 300,
+    	eye: [0,15,50,1]
     });
     main.cameraMode = 1;
+	
+	main.shadowcam = new Camera({
+            eye: [-30, 130, -30, 1],
+            coi: [10, 0, 10, 1],
+            hfov: 20,
+			up: [0, 0.5, 0.5, 0],
+			aspect: 1,
+            hither: 100,
+            yon: 200.0 
+    });
+	
     main.amb = [0.05,0.05,0.05];
     main.lightattr = ["pos", "col", "dir", "atten", "brightness"];
     main.lights = [];
@@ -86,6 +99,8 @@ function main(){
 	main.glowFBO1 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	main.glowFBO2 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
+	main.shadowFBO = new tdl.Framebuffer(500, 500, {format:[ [gl.RGBA, gl.FLOAT] ]});
+    main.blurFBO = new tdl.Framebuffer(500, 500, {format:[ [gl.RGBA, gl.FLOAT] ]});
 	
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
@@ -98,13 +113,17 @@ function main(){
 		new tdl.Texture2D(loader, "tex/skyscraper.png"),
 		new tdl.Texture2D(loader, "tex/skyscraper2.png")
 	]);
-	main.city = new City({width: 8, height: 8, pos: [0, 0, 0, 1]});
+	main.city = new City({width: 7, height: 7, pos: [0, 0, 0, 1]});
+	
+	Dude.initialize(loader);
+	main.dude = new Dude([-5, 31.6, -5, 1]);
 	
     main.entities = [
-					 main.city
+					 main.city,
+					 main.dude
                     ];
 					
-    main.tree = new Tree(loader, [100,100,100]);
+    main.tree = new Tree(loader, [100, 100, 100]);
 	ParticleSystem.load(loader);
 	main.particleSystem = new ParticleSystem(10000);
 
@@ -194,6 +213,7 @@ function update(){
 	main.wt += dtime;
 	keyHandler(dtime);
 	main.particleSystem.update(dtime);
+	main.dude.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;

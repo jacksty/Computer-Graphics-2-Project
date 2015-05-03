@@ -1,5 +1,5 @@
 precision highp float;
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 3
 #define PHONG 1.0
 #define BILLBOARD 2.0
 #define LAMBERT 0.0

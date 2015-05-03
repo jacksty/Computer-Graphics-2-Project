@@ -9,7 +9,7 @@ precision highp float;
 #define PHONG 0.0
 #define COOKTORRENCE 1.0
 #define BILLBOARD 2.0
-#define MAX_LIGHTS 10
+#define MAX_LIGHTS 3
 
 struct Light{
 	vec4 pos; //w = 0 directional, 1 positional
@@ -35,6 +35,13 @@ uniform vec3 c2;
 uniform vec3 fogColor;
 uniform float fogDensity;
 uniform float fogDark;
+
+uniform sampler2D shadowbuffer;
+uniform mat4 light_viewMatrix;
+uniform mat4 light_projMatrix;
+uniform vec3 light_hitheryon;
+uniform float magic_constant;
+uniform float scale_factor;
 
 varying vec2 texCoord;
 
@@ -144,10 +151,33 @@ void main()
 	float specval = specmtl.a * 4.0;
 	float specmode = 1.0 - floor(lightMode / 2.0);
 	
+	//SHADOWS N SHIT-----
 	float litpct = 1.0;
+	vec4 tmp = worldSpace * light_viewMatrix;
+    float z1 = tmp.z;
+    z1 = -z1;
+    z1 = (z1-light_hitheryon[0]) / light_hitheryon[2];
+    z1 *= scale_factor;
+    
+    tmp = tmp * light_projMatrix;
+    tmp.xy /= tmp.w;
+    tmp.xy = 0.5*(tmp.xy + vec2(1.0));
 	
+	bvec2 a = lessThan(tmp.xy, vec2(0.0, 0.0));
+	bvec2 b = greaterThan(tmp.xy, vec2(1.0, 1.0));
+	if (!any(a) && !any(b))
+	{
+		float z2 = texture2D(shadowbuffer, tmp.xy).r;
+		z2 = abs(z2);
+		
+		float c = magic_constant;
+		litpct = exp(c * (z2 - z1));
+		//litpct = z2 / exp(c*z1);
+		litpct = 0.5 + clamp(litpct, 0.0, 1.0) * 0.5;
+	}
+	
+	//DRAW WITH EACH LIGHT-----
 	vec3 cumlight = emissive + ambient * color;
-	
 	for (int i = 0; i < MAX_LIGHTS; i++)
 	{
 		vec3 L = normalize(light[i].pos.xyz - light[i].pos.w * worldSpace.xyz);
@@ -169,10 +199,10 @@ void main()
 	vec3 rim = 0.24 * specmode * litpct * other_RIM(8.5, vec3(1.0), N, V);
 	vec3 tc = clamp(cumlight + rim, 0.0, 1.0);
 	
-	float dist = distance(worldSpace.xyz, cameraPos.xyz);
+	/*float dist = distance(worldSpace.xyz, cameraPos.xyz);
     float fog = exp(-fogDensity * dist);
 	float dark = (1.0 - (tc.r + tc.g + tc.b) / 3.0) * fogDark;
-    tc = mix(fogColor, mix(tc, fogColor, dark), fog);
+    tc = mix(fogColor, mix(tc, fogColor, dark), fog);*/
 	
 	gl_FragColor.rgb = tc;
 	gl_FragColor.a = 1.0;

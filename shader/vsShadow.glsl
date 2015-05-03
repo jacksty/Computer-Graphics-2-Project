@@ -1,17 +1,13 @@
 #define MAX_BONE_CHAIN_LENGTH 16
 
 attribute vec3 a_position;
-attribute vec2 a_texcoord;
-attribute vec3 a_normal;
 attribute vec4 a_weight;
 attribute vec4 a_boneidx;
 attribute vec3 a_tang;
 
-uniform sampler2D tex;
-uniform mat4 viewProjMat;
 uniform mat4 worldMatrix;
-uniform mat4 reflectionMatrix;
-uniform vec4 cameraPos;
+uniform mat4 viewMatrix;
+uniform mat4 projMatrix;
 uniform bool hasbones;
 uniform sampler2D bonetex;     
 uniform vec4 bonetex_size;
@@ -19,11 +15,7 @@ uniform sampler2D quattex;
 uniform vec4 quattex_size;
 uniform float currframe;
 
-varying vec4 worldPos;
-varying vec4 camWorldPos;
-varying vec3 oNormal;
-varying vec3 oTangent;
-varying vec2 texpos;
+varying float v_viewPosz;
 
 vec4 getBone(float idx)
 {
@@ -98,20 +90,11 @@ vec4 interpolatePosition(vec4 p, float frame)
 
 void main()
 {
-	oTangent = normalize(a_tang - dot(a_tang, a_normal) * a_normal);
-	texpos = a_texcoord;
-	
-	vec4 p = vec4(a_position, 1.0);
-	vec4 n = normalize(vec4(a_normal, 0.0));
+    vec4 p = vec4(a_position, 1.0);
 	if (hasbones)
-	{
 		p = interpolatePosition(p,currframe);
-		n = interpolatePosition(n,currframe);
-	}
-	oNormal = n.xyz;
 	p = p * worldMatrix;
-	worldPos = p;
-	camWorldPos = cameraPos * worldMatrix;
-    p = p * reflectionMatrix;
-	gl_Position = p * viewProjMat;
+    p = p * viewMatrix;
+    v_viewPosz = -p.z;
+    gl_Position = p * projMatrix;
 }

@@ -88,10 +88,10 @@ function move(type, amtCam, amtAst){
 	}
 	
 	if(type === "turnt")
-		main.tank.turnTurret(amtAst);
+		main.dude.strafe(amtAst);
 	
 	if(type === "tiltg")
-		main.tank.tiltGun(amtAst);
+		main.dude.turn(amtAst);
 	
 	if(main.cameraMode === 3)
 		main.cam.orientFromCOI(main.tank.pos, [0,1,0,0]);

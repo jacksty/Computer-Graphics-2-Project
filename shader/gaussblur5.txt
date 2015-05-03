@@ -1,0 +1,19 @@
+vec4 gaussblur5(
+         const in sampler2D tex,
+         const in vec2 tex_dist, 
+         const in vec2 texcoord,
+         const in vec2 deltas){
+    vec4 c = vec4(0,0,0,0);
+    c += 0.0026612646659533476 * texture2D(tex, texcoord + -5.0 * deltas * tex_dist);
+    c += 0.01344761071334243 * texture2D(tex, texcoord + -4.0 * deltas * tex_dist);
+    c += 0.0474084957625423 * texture2D(tex, texcoord + -3.0 * deltas * tex_dist);
+    c += 0.1166060836728201 * texture2D(tex, texcoord + -2.0 * deltas * tex_dist);
+    c += 0.20009683975506104 * texture2D(tex, texcoord + -1.0 * deltas * tex_dist);
+    c += 0.2395594108605616 * texture2D(tex, texcoord + 0.0 * deltas * tex_dist);
+    c += 0.20009683975506104 * texture2D(tex, texcoord + 1.0 * deltas * tex_dist);
+    c += 0.1166060836728201 * texture2D(tex, texcoord + 2.0 * deltas * tex_dist);
+    c += 0.0474084957625423 * texture2D(tex, texcoord + 3.0 * deltas * tex_dist);
+    c += 0.01344761071334243 * texture2D(tex, texcoord + 4.0 * deltas * tex_dist);
+    c += 0.0026612646659533476 * texture2D(tex, texcoord + 5.0 * deltas * tex_dist);
+    return c;
+}
