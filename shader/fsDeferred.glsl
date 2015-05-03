@@ -199,10 +199,10 @@ void main()
 	vec3 rim = 0.24 * specmode * litpct * other_RIM(8.5, vec3(1.0), N, V);
 	vec3 tc = clamp(cumlight + rim, 0.0, 1.0);
 	
-	/*float dist = distance(worldSpace.xyz, cameraPos.xyz);
+	float dist = distance(worldSpace.xyz, cameraPos.xyz);
     float fog = exp(-fogDensity * dist);
 	float dark = (1.0 - (tc.r + tc.g + tc.b) / 3.0) * fogDark;
-    tc = mix(fogColor, mix(tc, fogColor, dark), fog);*/
+    tc = mix(fogColor, mix(tc, fogColor, dark), fog);
 	
 	gl_FragColor.rgb = tc;
 	gl_FragColor.a = 1.0;

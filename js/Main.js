@@ -128,11 +128,11 @@ function main(){
 	main.particleSystem = new ParticleSystem(10000);
 
     main.transEnt = [
-                     new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [7,5,8,1]})
+                     new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [-8,31.5,-6,1]})
                      ];
 					 
 	main.glowingEnt = [
-					new Mesh(loader, "open_sign.mesh", {right: [0,-1,0,0], up: [0,0,-1,0], back: [-1,0,0,0], position: [0,14,32.5,1]})
+					new Mesh(loader, "open_sign.mesh", {right: [0,-1,0,0], up: [0,0,-1,0], back: [-1,0,0,0], position: [-5,24,1,1], scaling:[4,4,4]})
 					];
     
     main.wat = [ //verts/size = 1.5 per direction shows no obvious edges (even close up) on gently rolling waves (still shows if frequency is high)
