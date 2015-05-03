@@ -66,7 +66,6 @@ Dude.prototype.update = function(elapsed)
 	this.currframe += elapsed / 100;
 	if (this.currframe > Dude.mesh.numframes)
 		this.currframe -= Dude.mesh.numframes;
-	console.log(currframe);
 }
 
 Dude.prototype.draw = function(prog) 
