@@ -33,7 +33,7 @@ void main()
 	//THEN don't draw the fragment (reflection)
 	if( color.a < 0.05 || (clipPlane.w != 0.0 && (sign(worldPos.y - (clipPlane.y - 0.3)) == -1.0 || sign(cameraPos.y - clipPlane.y) == -0.3)))
         discard;
-	vec4 bump = texture2D(normalMap, texpos);
+	vec4 bump = texture2D(normalMap, 10.0 * texpos);
 	vec4 specmtl = texture2D(specMap, texpos);
 	vec3 emissive = texture2D(emitMap, texpos).rgb;
 	vec3 normal = oNormal;

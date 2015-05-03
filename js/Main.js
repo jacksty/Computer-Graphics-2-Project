@@ -158,6 +158,7 @@ function main(){
 
 function init()
 {
+	City.skyscraper.bump = main.skyscraperBump;
 	var gg = new Uint8Array(256*4);
     var ctr=0;
     for(var i=0;i<256;++i){
