@@ -74,6 +74,14 @@ function draw(){
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
 	
+	if (main.cam.eye[1] <= main.wat[0].position[1] + 1)
+	{
+		main.square.use();
+		main.square.setUniform("blur", false);
+		main.square.setUniform("tex", main.overlayFBO);
+		main.us.draw(main.square);
+	}
+	
 	tdl.requestAnimationFrame(draw);
 }
 

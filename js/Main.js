@@ -101,6 +101,12 @@ function main(){
 	main.glowFBO3 = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	main.shadowFBO = new tdl.Framebuffer(500, 500, {format:[ [gl.RGBA, gl.FLOAT] ]});
     main.blurFBO = new tdl.Framebuffer(500, 500, {format:[ [gl.RGBA, gl.FLOAT] ]});
+    main.overlayFBO = new tdl.Framebuffer(1, 1);
+	
+	main.overlayFBO.bind();
+	gl.clearColor(0.8,0.1,0.1,0.1);
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	main.overlayFBO.unbind();
 	
     main.us = new UnitSquare();
     main.dummytex = new tdl.textures.SolidTexture([0,0,0,0]);
