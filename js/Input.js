@@ -49,13 +49,13 @@ function keyHandler(dtime){
 	if(main.keyDict[69] === true) //e
 		move("lean", -r, 0);
 	if(main.keyDict[74] === true) //j
-		move("turnt", 0, r * 4, dtime);
+		move("turnt", 0, r * 3, dtime);
 	if(main.keyDict[76] === true) //l
-		move("turnt", 0, -r * 4, dtime);
+		move("turnt", 0, -r * 3, dtime);
 	if(main.keyDict[75] === true) //k
-		move("tiltg", 0, -r * 4, dtime);
+		move("tiltg", 0, -r * 2.5, dtime);
 	if(main.keyDict[73] === true) //i
-		move("tiltg", 0, r * 4, dtime);
+		move("tiltg", 0, r * 2.5, dtime);
 }
 
 //tank movement
