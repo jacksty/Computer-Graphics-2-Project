@@ -52,7 +52,7 @@ function draw(){
     setWaterUniforms(main.water, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.water, i, true);
-    drawWater(main.water, main.cam);
+    //drawWater(main.water, main.cam);
     main.water.setUniform("reflection", main.dummytex);
     
     //other transparent objects

@@ -50,64 +50,64 @@ Grid.prototype.getProximate = function(cell)
 	return L;
 }
 
-Grid.prototype.getCollisions = function(entities)
+Grid.prototype.getCollisions = function(buildingOBB, dudeOBB)
 {	
 	var collide = true;
 	var A = []; //Axes
 	var cellEntities = [] //All entities in current cell
-	for (var i = 0; i < entities.length; i++)
-	{
-		entities[i].OBB.updateCell(this.put(entities[i].pos[0], entities[i].pos[2], entities[i], entities[i].OBB.currentCell));
-		cellEntities = this.getProximate(entities[i].OBB.currentCell);
-		for (var j = 0; j < cellEntities.length; j++)
-		{
+	//for (var i = 0; i < buildingOBB.length; i++)
+	//{
+		//entities[i].updateCell(this.put(entities[i].pos[0], entities[i].pos[2], entities[i], entities[i].currentCell));
+		//cellEntities = this.getProximate(entities[i].currentCell);
+		//for (var j = 0; j < cellEntities.length; j++)
+		//{
 			A = [];
-			if (entities[i] == cellEntities[j])
-				continue;
+			//if (entities[i] == cellEntities[j])
+			//	continue;
 			for (var k = 0; k < 6; k++)
 			{
 				if (k <= 2)
 				{
-					A.push(entities[i].OBB.faceNormals[k]);
+					A.push(dudeOBB.faceNormals[k]);
 				}
 				else
 				{
-					A.push(tdl.mul(-1, entities[i].OBB.faceNormals[k - 3]));
+					A.push(tdl.mul(-1, dudeOBB.faceNormals[k - 3]));
 				}
 			}
 			for (var l = 0; l < 6; l++)
 			{
 				if (l <= 2)
 				{
-					A.push(cellEntities[j].OBB.faceNormals[i]);
+					A.push(buildingOBB.faceNormals[l]);
 				}
 				else
 				{
-					A.push(tdl.mul(-1, cellEntities[j].OBB.faceNormals[l - 3]));
+					A.push(tdl.mul(-1, buildingOBB.faceNormals[l - 3]));
 				}
 			}
 			for (var m = 0; m < 12; m++)
 			{
 				
-				var r1 = entities[i].OBB.projectToAxis(entities[i].OBB.p, A[m]);
-				var r2 = cellEntities[j].OBB.projectToAxis(entities[i].OBB.p, A[m]);
+				var r1 = dudeOBB.projectToAxis(dudeOBB.p, A[m]);
+				var r2 = buildingOBB.projectToAxis(dudeOBB.p, A[m]);
 				if (!ranges_overlap(r1, r2))
 				{
 					collide = false;
 					break;
 				}
 			}
-			if (collide)
+			if (!collide)
 			{
-				this.collide(entities[i], cellEntities[j]);
+				this.collide();
 			}
 			else
 				collide = true;
-		}
-	}
+		//}
+	//}
 }
 
-Grid.prototype.collide = function(obj1, obj2)
+Grid.prototype.collide = function()
 {
-	//do something
+	console.log("Hit");
 }
