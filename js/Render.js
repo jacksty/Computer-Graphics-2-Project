@@ -119,7 +119,13 @@ function drawGlowingObjects(prog){
 	
 	main.buffer.use();
 	drawOpaqueObjects(main.buffer);
+	
+    main.billboard.use();
+    main.cam.draw(main.billboard);
+    drawBillboards(main.billboard);
+	
 	gl.clear(gl.COLOR_BUFFER_BIT);
+	
 	prog.use();
 	main.cam.draw(prog);
 	prog.setUniform("blur", false);
