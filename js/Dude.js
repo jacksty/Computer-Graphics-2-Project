@@ -11,7 +11,7 @@ function Dude(pos)
 
 Dude.initialize = function(loader)
 {
-	Dude.mesh = new Mesh(loader, "tempdude.mesh");
+	Dude.mesh = new Mesh(loader, "dude.mesh");
 }
 
 Dude.prototype.correctLen = function()
@@ -63,9 +63,9 @@ Dude.prototype.turn = function(rads, elapsed)
 
 Dude.prototype.update = function(elapsed)
 {
-	this.currframe += elapsed / 100;
-	if (this.currframe > Dude.mesh.numframes)
-		this.currframe -= Dude.mesh.numframes;
+	this.currframe += elapsed * 0.12;
+	if (this.currframe > 100)
+		this.currframe -= 100;
 }
 
 Dude.prototype.draw = function(prog) 
