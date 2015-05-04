@@ -6,6 +6,7 @@ function Dude(pos)
 	this.antiforward = [0,0,1,0];
 	this.scale = 0.2;
 	this.currframe = 0;
+	this.OBB = new OBB(this.pos, [2.038,0,0,0], [0,4.898,0,0], [0,0,1.156,0]);
 	this.computeWM();
 	this.moving = false;
 }
@@ -37,6 +38,7 @@ Dude.prototype.computeWM = function()
 	              0, 0, 0, 1];
 	var scale = tdl.scaling(this.scale, this.scale, this.scale);
 	this.worldMatrix = tdl.mul(tdl.mul(rotate, scale), translate);
+	this.OBB.draw(this.worldMatrix);
 }
 
 Dude.prototype.strafe = function(val, elapsed)
