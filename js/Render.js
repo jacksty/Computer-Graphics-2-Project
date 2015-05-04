@@ -68,7 +68,6 @@ function draw(){
 	
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
-	drawParticles();
 	main.square.use();
 	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
@@ -136,6 +135,7 @@ function drawGlowingObjects(prog){
 	}
 	
 	prog.setUniform("tex", main.dummytex);
+	drawParticles();
 	main.glowFBO1.unbind();
 	
 	main.square.use();

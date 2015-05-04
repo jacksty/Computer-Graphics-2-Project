@@ -224,7 +224,7 @@ function update(){
 	for (var i = 0; i < main.particleSystems.length; i++)
 	{
 		if (main.particleSystems[i].maxLife <= 0 || main.particleSystems[i].maxLife == undefined)
-			main.particleSystems[i].init({startpos: [-5 + randomRange(-4.6,4.6),24 + randomRange(0,3),1.4,1], color: [1,0,0,1], initialVelocity: [0,0,1], initialVelocityMod: [1,1,1], gravity: [0, -1, 0], gravityMod: [1,4,1], life: 1000 * randomRange(1, 4), size: 5.0});
+			main.particleSystems[i].init({startpos: [-5 + randomRange(-4.6,4.6),24 + randomRange(0,3),1.4,1], color: [0.6,0.15,0.15,1], initialVelocity: [0,0,1], initialVelocityMod: [1,1,1], gravity: [0, -1, 0], gravityMod: [1,4,1], life: 1000 * randomRange(1, 4), size: 5.0});
 		main.particleSystems[i].update(dtime);
 	}
 	main.dude.update(dtime);

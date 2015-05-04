@@ -22,6 +22,6 @@ void main(){
     else
         gl_Position=p*viewProjMat;
     
-    gl_PointSize=2.0;
+    gl_PointSize=4.0;
     
 }
