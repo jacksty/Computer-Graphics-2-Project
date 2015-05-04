@@ -12,7 +12,6 @@ function draw(){
     main.cam.draw(main.buffer);
     main.buffer.setUniform("clipPlane", [0,0,0,0]);
     drawOpaqueObjects(main.buffer);
-	main.particleSystem.draw(main.buffer, main.cam);
     main.billboard.use();
     main.cam.draw(main.billboard);
     drawBillboards(main.billboard);
@@ -69,6 +68,7 @@ function draw(){
 	
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
+	drawParticles();
 	main.square.use();
 	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
@@ -91,9 +91,10 @@ function drawOpaqueObjects(prog){
 		main.entities[i].draw(prog);
 }
 
-function drawParticles(prog, camera)
+function drawParticles()
 {
-	main.particleSystem.draw(camera);
+	for (var i = 0; i < main.particleSystems.length; i++)
+		main.particleSystems[i].draw();
 }
 
 function drawBillboards(prog){
@@ -119,7 +120,6 @@ function drawGlowingObjects(prog){
 	
 	main.buffer.use();
 	drawOpaqueObjects(main.buffer);
-	main.particleSystem.draw(prog, main.cam);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	prog.use();
 	
