@@ -30,3 +30,12 @@ function updateTransparency(){
 function randomRange(n,x){
     return n + Math.random() * (x-n);
 }
+
+function ranges_overlap(R1, R2)
+{
+	if (R2[1] < R1[0])
+		return false;
+	if (R1[1] < R2[0])
+		return false;
+	return true;
+}

@@ -120,9 +120,13 @@ function main(){
 		new tdl.Texture2D(loader, "tex/skyscraper2.png")
 	]);
 	main.city = new City({width: 7, height: 7, pos: [0, 0, 0, 1]});
-	
+	main.grid = new Grid(-1000,1000,-1000,1000,10);
 	Dude.initialize(loader);
 	main.dude = new Dude([-5, 31.462, -5, 1]);
+	
+	main.dude.OBB.updateCell(main.grid.put(main.dude.pos[0], main.dude.pos[2], main.dude));
+	
+	main.buildingOBB = new OBB([-6.2, 30.3, -10.8, 1], [5,0,0,0], [0,5,0,0], [0,0,5,0]);
 	
     main.entities = [
 					 main.city,
@@ -228,7 +232,7 @@ function update(){
 		main.particleSystems[i].update(dtime);
 	}
 	main.dude.update(dtime);
-	
+	main.grid.getCollisions(main.buildingOBB, main.dude.OBB);
 	main.ufo.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
