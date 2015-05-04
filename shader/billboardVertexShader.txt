@@ -8,7 +8,7 @@ uniform vec4 cameraW;
 uniform vec4 cameraPos;
 uniform mat4 viewProjMat;
 uniform mat4 worldMatrix;
-uniform mat4 rotateMatrix;
+
 uniform float opacity;
 
 varying vec4 worldPos;
@@ -18,21 +18,23 @@ varying vec2 texpos;
 
 void main()
 {
-	vec3 p = position;
+	vec4 p = vec4(position, 1.0)* worldMatrix;
+	
     vec2 tmp = (coords - vec2(0.5))	* 2.0;
     
     vec3 U,V;
 
 	V = vec3(0.0,1.0,0.0);
-	vec3 W = cameraPos.xyz-position.xyz;
+	vec3 W = cameraPos.xyz-p.xyz;
 	U = cross(V,W);
 	U = normalize(U);
     
-    //p = p + tmp.x * vec3(1.0,0.0,0.0) + tmp.y * vec3(0.0,1.0,0.0); 
-	p = p + tmp.x * U + tmp.y * V; 	
-    
-	worldPos = vec4(p,1.0);
-    gl_Position = vec4(p,1.0) * viewProjMat;
+	vec4 tmpU = vec4(U,0.0);
+	vec4 tmpV = vec4(V,0.0);
+	
+	p = p + tmp.x * 2.0 * tmpU + tmp.y * 2.0 * tmpV; 	
+	worldPos = p;
+    gl_Position = worldPos * viewProjMat;
     texpos = coords;
 	oTangent = vec3(0.0,0.0,0.0);
 	oNormal = vec3(0.0,1.0,0.0);

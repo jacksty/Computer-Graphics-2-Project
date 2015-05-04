@@ -53,7 +53,7 @@ function main(){
     	hfov: 90,
     	hither: 0.1,
     	yon: 300,
-    	eye: [0,15,50,1]
+    	eye: [-5, 33, 11, 1]
     });
     main.cameraMode = 1;
 	
@@ -129,7 +129,7 @@ function main(){
 					 main.dude
                     ];
 					
-    main.tree = new Tree(loader, [100, 100, 100]);
+    main.ufo = new UFO(loader, [-5, 33, -5]);
 	ParticleSystem.load(loader);
 	main.particleSystems = [new ParticleSystem(40), new ParticleSystem(40), new ParticleSystem(40)];
 
@@ -228,6 +228,8 @@ function update(){
 		main.particleSystems[i].update(dtime);
 	}
 	main.dude.update(dtime);
+	
+	main.ufo.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;

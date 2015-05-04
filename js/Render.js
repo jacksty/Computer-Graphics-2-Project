@@ -101,7 +101,7 @@ function drawBillboards(prog){
 	prog.setUniform("normalMap", main.dummytex);
 	prog.setUniform("emitMap", main.dummytex);
 	main.cam.draw(prog);
-	main.tree.draw(prog);
+	main.ufo.draw(prog);
 }
 
 function drawTransparentObjects(prog){
