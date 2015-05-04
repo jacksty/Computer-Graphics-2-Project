@@ -122,11 +122,16 @@ function drawGlowingObjects(prog){
 	drawOpaqueObjects(main.buffer);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	prog.use();
+	main.cam.draw(prog);
+	prog.setUniform("blur", false);
 	
 	for (var i = 0; i < main.glowingEnt.length; ++i)
 	{
-		main.cam.draw(prog);
-		prog.setUniform("blur", false);
+		if (i == 0)
+		{
+			prog.setUniform("noisescale", 14.0);
+			prog.setUniform("noisetime", main.wt * 0.001);
+		}
 		main.glowingEnt[i].draw(prog);
 	}
 	

@@ -6,6 +6,8 @@ uniform bool blur;
 uniform vec2 blur_deltas;
 varying vec2 texpos;
 
+#include "shader/noise.txt"
+
 vec4 gaussblur11(
          const in sampler2D tex,
          const in vec2 tex_dist, 
@@ -39,5 +41,15 @@ vec4 gaussblur11(
 }
 
 void main(){
+	vec3 p = vec3(texpos.st, 1.0);
+	p *= noisescale;
+	p.yz += vec2(noisetime, -noisetime);
+	float val = noise3(p);
+    val += 0.5*noise3(2.0*p);
+    val += 0.25*noise3(4.0*p);
+    val += 0.125*noise3(8.0*p);
+
 	gl_FragColor = (blur) ? gaussblur11(tex, tex_size.zw, texpos.st, blur_deltas.st) : texture2D(tex, texpos.st);
+	
+	gl_FragColor.g += val;
 }

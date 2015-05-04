@@ -1,0 +1,7 @@
+Skybox:
+	http://reije081.home.xs4all.nl/skyboxes/
+	Cut up into cubemap
+	
+Skyscraper base texture (Not normal and spec maps)
+	http://cgtextures.com/
+	modified colors and tiled to meet needs
