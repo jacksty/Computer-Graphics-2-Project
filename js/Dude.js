@@ -7,6 +7,7 @@ function Dude(pos)
 	this.scale = 0.2;
 	this.currframe = 0;
 	this.computeWM();
+	this.moving = false;
 }
 
 Dude.initialize = function(loader)
@@ -47,6 +48,7 @@ Dude.prototype.strafe = function(val, elapsed)
 	var M = tdl.translation(tmp);
 	this.pos = tdl.mul(this.pos, M);
 	this.computeWM();
+	this.moving = true;
 }
 
 Dude.prototype.turn = function(rads, elapsed)
@@ -63,9 +65,22 @@ Dude.prototype.turn = function(rads, elapsed)
 
 Dude.prototype.update = function(elapsed)
 {
-	this.currframe += elapsed * 0.12;
-	if (this.currframe > 100)
-		this.currframe -= 100;
+	if (this.moving)
+	{
+		this.currframe += elapsed * 0.12;
+		if (this.currframe > 100)
+			this.currframe -= 100;
+	}
+	else if (this.currframe != 0)
+	{
+		if (this.currframe > 50)
+			this.currframe += elapsed * 0.21;
+		else
+			this.currframe -= elapsed * 0.21;
+		if (this.currframe > 100 || this.currframe < 0)
+			this.currframe = 0;
+	}
+	this.moving = false;
 }
 
 Dude.prototype.draw = function(prog) 
