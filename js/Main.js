@@ -122,7 +122,7 @@ function main(){
 	main.city = new City({width: 7, height: 7, pos: [0, 0, 0, 1]});
 	
 	Dude.initialize(loader);
-	main.dude = new Dude([-5, 31.6, -5, 1]);
+	main.dude = new Dude([-5, 31.462, -5, 1]);
 	
     main.entities = [
 					 main.city,

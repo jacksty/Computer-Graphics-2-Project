@@ -49,13 +49,13 @@ function keyHandler(dtime){
 	if(main.keyDict[69] === true) //e
 		move("lean", -r, 0);
 	if(main.keyDict[74] === true) //j
-		move("turnt", 0, r);
+		move("turnt", 0, r * 4, dtime);
 	if(main.keyDict[76] === true) //l
-		move("turnt", 0, -r);
+		move("turnt", 0, -r * 4, dtime);
 	if(main.keyDict[75] === true) //k
-		move("tiltg", 0, -r);
+		move("tiltg", 0, -r * 4, dtime);
 	if(main.keyDict[73] === true) //i
-		move("tiltg", 0, r);
+		move("tiltg", 0, r * 4, dtime);
 }
 
 //tank movement
@@ -87,10 +87,10 @@ function move(type, amtCam, amtAst){
 	}
 	
 	if(type === "turnt")
-		main.dude.strafe(amtAst);
+		main.dude.turn(amtAst);
 	
 	if(type === "tiltg")
-		main.dude.turn(amtAst);
+		main.dude.strafe(amtAst);
 	
 	if(main.cameraMode === 3)
 		main.cam.orientFromCOI(main.tank.pos, [0,1,0,0]);

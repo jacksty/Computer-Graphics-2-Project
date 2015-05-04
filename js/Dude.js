@@ -40,10 +40,10 @@ Dude.prototype.computeWM = function()
 
 Dude.prototype.strafe = function(val, elapsed)
 {
-	var vec = tdl.mul(this.antiforward, -0.5);
+	var vec = tdl.mul(this.antiforward, val);
 	var tmp = tdl.mul(tdl.dot(vec, this.right), this.right);
 	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.up), this.up));
-	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.back), this.back));
+	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.antiforward), this.antiforward));
 	var M = tdl.translation(tmp);
 	this.pos = tdl.mul(this.pos, M);
 	this.computeWM();
@@ -56,8 +56,8 @@ Dude.prototype.turn = function(rads, elapsed)
 			tdl.axisRotation(this.up, rads),
 			tdl.translation(this.pos)
 		);
-	this.back = tdl.normalize(tdl.mul(this.back, M));
-	this.right = tdl.cross(this.up, this.back);
+	this.antiforward = tdl.normalize(tdl.mul(this.antiforward, M));
+	this.right = tdl.cross(this.up, this.antiforward);
 	this.computeWM();
 }
 
