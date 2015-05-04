@@ -21,6 +21,13 @@ function City(opts) {
 			if (i == mid[0] && j == mid[1])
 				s = tdl.scaling(2.5, 2.5, 2.5);
 			
+			if (i == mid[0] && j == mid[1] + 1)
+				s = tdl.scaling(1.0, 1.4, 1.0);
+			if (i == mid[0] && j == mid[1] + 2)
+				s = tdl.scaling(1.0, 1.3, 1.0);
+			if (i == mid[0] && j == mid[1] + 3)
+				s = tdl.scaling(1.0, 1.25, 1.0);
+			
 			var wm = tdl.mul(s, t);
 			
 			this.buildings[i][j] = [wm, tex];
