@@ -15,17 +15,21 @@ function draw(){
     main.billboard.use();
     main.cam.draw(main.billboard);
     drawBillboards(main.billboard);
-    main.deferredFBO.unbind();
+	main.deferredFBO.unbind();
     
     //pass 2
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE);
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	main.finalFBO.bind();
+	gl.clearColor(0, 0, 0, 1);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
     main.deferred.use();
     setDeferredUniforms(main.deferred, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.deferred, i, true);
 	main.us.draw(main.deferred);
+	main.finalFBO.unbind();
     setDummyTex(main.deferred);
 	
     //pass 3 (forward rendering)
@@ -41,10 +45,12 @@ function draw(){
      */
     
     //skybox
+	main.finalFBO.bind();
 	main.sky.use();
 	main.cam.draw(main.sky);
 	main.sky.setUniform("reflection", 1);
 	main.skybox.draw(main.sky);
+	main.finalFBO.unbind();
 	
 	//water
 	gl.enable(gl.CULL_FACE);
@@ -52,15 +58,19 @@ function draw(){
     setWaterUniforms(main.water, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.water, i, true);
+	main.finalFBO.bind();
     drawWater(main.water, main.cam);
     main.water.setUniform("reflection", main.dummytex);
+	main.finalFBO.unbind();
     
     //other transparent objects
     main.transparent.use();
+	main.finalFBO.bind();
     setTransparencyUniforms(main.transparent, main.cam);
     for(var i = 0; i < main.lights.length; ++i)
     	main.setLight(main.transparent, i, true);
     drawTransparentObjects(main.transparent);
+	main.finalFBO.unbind();
 	gl.disable(gl.CULL_FACE);
 	
 	gl.enable(gl.BLEND);
@@ -69,17 +79,29 @@ function draw(){
 	//glowing objects
 	drawGlowingObjects(main.selfEmissive);
 	main.square.use();
+	main.finalFBO.bind();
 	main.square.setUniform("blur", false);
 	main.square.setUniform("tex", main.glowFBO2);
 	main.us.draw(main.square);
+	main.finalFBO.unbind();
 	
 	if (main.cam.eye[1] <= main.wat[0].position[1] + 1)
 	{
+		main.finalFBO.bind();
 		main.square.use();
 		main.square.setUniform("blur", false);
 		main.square.setUniform("tex", main.overlayFBO);
 		main.us.draw(main.square);
+		main.finalFBO.unbind();
 	}
+	
+	//final FBO
+	gl.clearColor(0, 0, 0, 1);
+	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+	main.finalprog.use();
+	main.finalprog.setUniform("tex", main.finalFBO);
+	main.us.draw(main.finalprog);
+	main.finalprog.setUniform("tex", main.dummytex);
 	
 	tdl.requestAnimationFrame(draw);
 }

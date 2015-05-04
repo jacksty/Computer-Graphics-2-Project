@@ -42,7 +42,8 @@ function main(){
 				   ["addTex", "vsSquare.glsl", "fsAddTex.glsl"],
 				   ["selfEmissive", "vsBuffer.glsl", "fsSquare.glsl"],
 				   ["shadow", "vsShadow.glsl", "fsShadow.glsl"],
-				   ["blur", "vsBlur.glsl", "fsBlur.glsl"]
+				   ["blur", "vsBlur.glsl", "fsBlur.glsl"],
+				   ["finalprog", "vsFinal.glsl", "fsFinal.glsl"]
                   ];
     loadShaders(loader, shaders);
     
@@ -102,6 +103,7 @@ function main(){
 	main.shadowFBO = new tdl.Framebuffer(500, 500, {format:[ [gl.RGBA, gl.FLOAT] ]});
     main.blurFBO = new tdl.Framebuffer(500, 500, {format:[ [gl.RGBA, gl.FLOAT] ]});
     main.overlayFBO = new tdl.Framebuffer(1, 1);
+	main.finalFBO = new tdl.Framebuffer(gl.canvas.width, gl.canvas.height);
 	
 	main.overlayFBO.bind();
 	gl.clearColor(0.5,0.05,0.05,0.6);
