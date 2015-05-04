@@ -5,7 +5,6 @@ function keyHandler(dtime){
 	if(main.keyDict[49] === true) //1
 		{
 			main.cameraMode = 1;
-			main.particleSystem.init({startpos: [0, 15, 40, 1], color: [1,1,1,1], initialVelocity: [0,0,0], initialVelocityMod: [1,1,1], gravity: [0, -1, 0], gravityMod: [1,1,1], life: 500000, size: 5.0});
 		}
 	if(main.keyDict[50] === true){ //2
 		main.cameraMode = 2;

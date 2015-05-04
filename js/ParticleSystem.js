@@ -1,9 +1,9 @@
 "use strict";
 
 function ParticleSystem(np){
-    //round number of particles to multiple of 100
-    var w = 100;
-    var h = Math.floor(np/100);
+    //round number of particles to multiple of 10
+    var w = 10;
+    var h = Math.floor(np/10);
     np = w*h;
     
     this.w=w;
@@ -71,7 +71,7 @@ ParticleSystem.prototype.init = function(opts){
 	this.emitter = (opts.emitter !== undefined) ? opts.emitter : 1.0;
 	this.gravity = tdl.mul(this.gravity, [0,.000001,0], this.gravityMod);
 	initialVelocity = tdl.mul(initialVelocity, [.001, .001, .001], initialVelocityMod);
-	this.maxlife = this.lifeleft;
+	this.maxLife = this.lifeleft + randomRange(0, 1500);
     this.idx=0;
     
     //all the starting positions are the same
@@ -93,6 +93,7 @@ ParticleSystem.prototype.init = function(opts){
 }
 
 ParticleSystem.prototype.update = function(elapsed){
+	this.maxLife -= elapsed;
     if(this.lifeleft <= 0)
         return;
 
@@ -125,12 +126,12 @@ ParticleSystem.prototype.update = function(elapsed){
     gl.enable(gl.BLEND);
 }
 
-ParticleSystem.prototype.draw = function(camera){
+ParticleSystem.prototype.draw = function(){
     if(this.lifeleft <= 0)
         return;
 
     ParticleSystem.drawprog.use();
-    camera.draw(ParticleSystem.drawprog);
+    main.cam.draw(ParticleSystem.drawprog);
     ParticleSystem.drawprog.setUniform("color",this.color);
     ParticleSystem.drawprog.setUniform("postex",this.pos[this.idx]);
     ParticleSystem.drawprog.setUniform("veltex",this.vel[this.idx]);

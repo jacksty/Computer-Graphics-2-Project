@@ -26,3 +26,7 @@ function updateTransparency(){
 			}
 	);
 }
+
+function randomRange(n,x){
+    return n + Math.random() * (x-n);
+}

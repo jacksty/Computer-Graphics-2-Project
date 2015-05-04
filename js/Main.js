@@ -131,7 +131,7 @@ function main(){
 					
     main.tree = new Tree(loader, [100, 100, 100]);
 	ParticleSystem.load(loader);
-	main.particleSystem = new ParticleSystem(10000);
+	main.particleSystems = [new ParticleSystem(40), new ParticleSystem(40), new ParticleSystem(40)];
 
     main.transEnt = [
                      new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [-8,31.5,-6,1]})
@@ -220,7 +220,13 @@ function update(){
 	main.time = newTime;
 	main.wt += dtime;
 	keyHandler(dtime);
-	main.particleSystem.update(dtime);
+	
+	for (var i = 0; i < main.particleSystems.length; i++)
+	{
+		if (main.particleSystems[i].maxLife <= 0 || main.particleSystems[i].maxLife == undefined)
+			main.particleSystems[i].init({startpos: [-5 + randomRange(-4.6,4.6),24 + randomRange(0,3),1.4,1], color: [1,0,0,1], initialVelocity: [0,0,1], initialVelocityMod: [1,1,1], gravity: [0, -1, 0], gravityMod: [1,4,1], life: 1000 * randomRange(1, 4), size: 5.0});
+		main.particleSystems[i].update(dtime);
+	}
 	main.dude.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
