@@ -53,7 +53,7 @@ function main(){
     	hfov: 90,
     	hither: 0.1,
     	yon: 300,
-    	eye: [0,15,50,1]
+    	eye: [-5, 33, 11, 1]
     });
     main.cameraMode = 1;
 	
@@ -129,7 +129,7 @@ function main(){
 					 main.dude
                     ];
 					
-    main.tree = new Tree(loader, [100, 100, 100]);
+    main.ufo = new UFO(loader, [-5, 33, -5]);
 	ParticleSystem.load(loader);
 	main.particleSystems = [new ParticleSystem(40), new ParticleSystem(40), new ParticleSystem(40)];
 
@@ -224,10 +224,12 @@ function update(){
 	for (var i = 0; i < main.particleSystems.length; i++)
 	{
 		if (main.particleSystems[i].maxLife <= 0 || main.particleSystems[i].maxLife == undefined)
-			main.particleSystems[i].init({startpos: [-5 + randomRange(-4.6,4.6),24 + randomRange(0,3),1.4,1], color: [1,0,0,1], initialVelocity: [0,0,1], initialVelocityMod: [1,1,1], gravity: [0, -1, 0], gravityMod: [1,4,1], life: 1000 * randomRange(1, 4), size: 5.0});
+			main.particleSystems[i].init({startpos: [-5 + randomRange(-4.6,4.6),24 + randomRange(0,3),1.4,1], color: [0.6,0.15,0.15,1], initialVelocity: [0,0,1], initialVelocityMod: [1,1,1], gravity: [0, -1, 0], gravityMod: [1,4,1], life: 1000 * randomRange(1, 4), size: 5.0});
 		main.particleSystems[i].update(dtime);
 	}
 	main.dude.update(dtime);
+	
+	main.ufo.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;

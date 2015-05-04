@@ -36,9 +36,10 @@
     gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, idata, gl.STATIC_DRAW);
 }
 
-Billboard.prototype.draw = function(prog){
+Billboard.prototype.draw = function(prog, objWorldMatrix){
 	//this.texture = new tdl.SolidTexture([0,255,0,255])
 	//this.texture = new tdl.Texture2D(loader,"media/tree4.png");
+	prog.setUniform("worldMatrix", objWorldMatrix);
 	prog.setUniform("tex", this.texture);
 	prog.setUniform("lightmode", 2.0);
 	gl.enable(gl.DEPTH_TEST);
