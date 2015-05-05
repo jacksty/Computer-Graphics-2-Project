@@ -6,6 +6,7 @@ uniform sampler2D tex;
 uniform vec4 tex_size;
 uniform vec2 resolution;
 uniform bool antialias;
+uniform bool showgrain;
 
 varying vec2 texpos;
 
@@ -22,6 +23,18 @@ void main()
 	vec4 antiAliased = fxaa(tex, texpos.st * resolution, resolution, v_rgbNW, v_rgbNE, v_rgbSW, v_rgbSE, v_rgbM);
 	vec3 tc = (antialias) ? antiAliased.rgb : texture2D(tex, texpos).rgb;
 	
-	gl_FragColor.rgb = tc;
+	vec3 p = vec3(texpos.st, noisescale * 0.005);
+	p *= noisescale;
+	p.yz += vec2(noisetime, -noisetime);
+	float val = noise3(p);
+    val += 0.5*noise3(2.0*p);
+    val += 0.25*noise3(4.0*p);
+    val += 0.125*noise3(8.0*p);
+	
+	vec3 nc = vec3(noise3(vec3(val, val, val)));
+	
+	float l = (0.299*tc.r + 0.587*tc.g + 0.114*tc.b);
+	
+	gl_FragColor.rgb = (showgrain) ? mix(tc, 0.7 * mix(nc, tc, l), 0.15) : tc;
 	gl_FragColor.a = 1.0;
 }

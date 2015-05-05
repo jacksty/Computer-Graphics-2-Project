@@ -6,6 +6,10 @@ function keyHandler(dtime){
 		main.antialias = true;
 	if(main.keyDict[50] === true) //2
 		main.antialias = false;
+	if(main.keyDict[51] === true) //3
+		main.showgrain = true;
+	if(main.keyDict[52] === true) //4
+		main.showgrain = false;
 			
 	if(main.keyDict[87] === true) //w
 		move("strafe", tdl.mul(main.cam.antilook, -d), tdl.mul(main.tank.back, -d));

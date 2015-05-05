@@ -29,6 +29,7 @@ function main(){
 	gl.depthFunc(gl.LEQUAL);
     
 	main.antialias = true;
+	main.showgrain = true;
 	main.time = new Date();
 	main.keyDict = {};
     var loader = new tdl.Loader(init);

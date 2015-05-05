@@ -100,7 +100,12 @@ function draw(){
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	main.finalprog.use();
 	main.finalprog.setUniform("antialias", main.antialias);
+	main.finalprog.setUniform("showgrain", main.showgrain);
 	main.finalprog.setUniform("resolution", [gl.canvas.width, gl.canvas.height]);
+	main.finalprog.setUniform("G", main.G);
+	main.finalprog.setUniform("P", main.P);
+	main.finalprog.setUniform("noisescale", 1000.0);
+	main.finalprog.setUniform("noisetime", main.wt * 0.0001);
 	main.finalprog.setUniform("tex", main.finalFBO);
 	main.us.draw(main.finalprog);
 	main.finalprog.setUniform("tex", main.dummytex);
