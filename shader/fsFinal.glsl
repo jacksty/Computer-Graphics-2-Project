@@ -7,6 +7,7 @@ uniform vec4 tex_size;
 uniform vec2 resolution;
 uniform bool antialias;
 uniform bool showgrain;
+uniform bool underwater;
 
 varying vec2 texpos;
 
@@ -36,5 +37,9 @@ void main()
 	float l = (0.299*tc.r + 0.587*tc.g + 0.114*tc.b);
 	
 	gl_FragColor.rgb = (showgrain) ? mix(tc, 0.7 * mix(nc, tc, l), 0.15) : tc;
+	
+	if (underwater)
+		gl_FragColor.rgb = mix(gl_FragColor.rgb, vec3(0.5, 0.1, 0.1), 0.8);
+	
 	gl_FragColor.a = 1.0;
 }

@@ -85,20 +85,11 @@ function draw(){
 	main.us.draw(main.square);
 	main.finalFBO.unbind();
 	
-	if (main.cam.eye[1] <= main.wat[0].position[1] + 1)
-	{
-		main.finalFBO.bind();
-		main.square.use();
-		main.square.setUniform("blur", false);
-		main.square.setUniform("tex", main.overlayFBO);
-		main.us.draw(main.square);
-		main.finalFBO.unbind();
-	}
-	
 	//final FBO
 	gl.clearColor(0, 0, 0, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	main.finalprog.use();
+	main.finalprog.setUniform("underwater", (main.cam.eye[1] <= main.wat[0].position[1] + 1));
 	main.finalprog.setUniform("antialias", main.antialias);
 	main.finalprog.setUniform("showgrain", main.showgrain);
 	main.finalprog.setUniform("resolution", [gl.canvas.width, gl.canvas.height]);
