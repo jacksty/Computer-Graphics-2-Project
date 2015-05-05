@@ -21,13 +21,21 @@
 <script src="js/OBB.js"></script>
 <script src="js/Grid.js"></script>
 <style>
-body {font-size: 75%; background-color:#000000}
+body {
+	font-size: 75%;
+	font-family: Arial, Helvetica, sans-serif;
+	color: white;
+	background-color:#000000
+}
+
 </style>
 </head>
 <body onload="main();">
 <br/><br/><br/><br/><br/><br/><br/>
 <center>
 <canvas id="cvs" width=1000 height=426></canvas>
+<p>| 1/2: Toggle Anti-Aliasing | 3/4: Toggle Grain | IJKL: Move Player |</p>
+<p>| WASD Shift Ctrl: Pan Camera | QE Up Down: Tilt Camera | Left Right: Turn Camera |</p>
 </center>
 </body>
 </html>
