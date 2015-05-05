@@ -28,6 +28,7 @@ function main(){
     gl.blendEquation(gl.FUNC_ADD);
 	gl.depthFunc(gl.LEQUAL);
     
+	main.antialias = true;
 	main.time = new Date();
 	main.keyDict = {};
     var loader = new tdl.Loader(init);
@@ -54,7 +55,7 @@ function main(){
     	hfov: 90,
     	hither: 0.1,
     	yon: 300,
-    	eye: [-5, 33, 11, 1]
+    	eye: [-5, 33, 45, 1]
     });
     main.cameraMode = 1;
 	

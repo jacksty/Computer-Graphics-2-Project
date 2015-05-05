@@ -99,6 +99,7 @@ function draw(){
 	gl.clearColor(0, 0, 0, 1);
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 	main.finalprog.use();
+	main.finalprog.setUniform("antialias", main.antialias);
 	main.finalprog.setUniform("resolution", [gl.canvas.width, gl.canvas.height]);
 	main.finalprog.setUniform("tex", main.finalFBO);
 	main.us.draw(main.finalprog);

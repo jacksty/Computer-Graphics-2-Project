@@ -3,23 +3,10 @@ function keyHandler(dtime){
 	var r = Math.PI/180 * 2 * d;
 	
 	if(main.keyDict[49] === true) //1
-		{
-			main.cameraMode = 1;
-		}
-	if(main.keyDict[50] === true){ //2
-		main.cameraMode = 2;
-		main.cam.right = main.tank.right;
-		main.cam.up = main.tank.up;
-		main.cam.antilook = main.tank.back;
-		main.cam.eye = [main.tank.pos[0], main.tank.pos[1], main.tank.pos[2], 1];
-		main.cam.eye = tdl.add(main.cam.eye, tdl.mul(main.tank.back, -.05));
-		main.cam.eye = tdl.add(main.cam.eye, tdl.mul(main.tank.up, 2));
-		main.cam.computeVPM();
-	}
-	if(main.keyDict[51] === true){ //3
-		main.cameraMode = 3;
-		main.cam.orientFromCOI(main.tank.pos, [0,1,0,0]);
-	}
+		main.antialias = true;
+	if(main.keyDict[50] === true) //2
+		main.antialias = false;
+			
 	if(main.keyDict[87] === true) //w
 		move("strafe", tdl.mul(main.cam.antilook, -d), tdl.mul(main.tank.back, -d));
 	if(main.keyDict[65] === true){ //a
