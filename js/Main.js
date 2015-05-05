@@ -30,6 +30,7 @@ function main(){
     
 	main.antialias = true;
 	main.showgrain = true;
+	main.correction = true;
 	main.time = new Date();
 	main.keyDict = {};
     var loader = new tdl.Loader(init);

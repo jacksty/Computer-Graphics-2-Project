@@ -101,6 +101,7 @@ function draw(){
 	main.finalprog.use();
 	main.finalprog.setUniform("antialias", main.antialias);
 	main.finalprog.setUniform("showgrain", main.showgrain);
+	main.finalprog.setUniform("correction", main.correction);
 	main.finalprog.setUniform("resolution", [gl.canvas.width, gl.canvas.height]);
 	main.finalprog.setUniform("G", main.G);
 	main.finalprog.setUniform("P", main.P);
@@ -324,7 +325,7 @@ function setDeferredUniforms(prog, cam){
     prog.setUniform("ambient", tdl.math.divVectorScalar(main.amb, main.lights.length == 0 ? 1 : main.lights.length)); //ambient light value is adjusted by number of passes so that the final ambient lighting stays constant
     prog.setUniform("winSizeVFOV", [gl.canvas.width, gl.canvas.height, main.cam.vfov]);
     prog.setUniform("hitherYon", [main.cam.hither, main.cam.yon]);
-	prog.setUniform("fogDensity", 0.012);
+	prog.setUniform("fogDensity", 0.016);
 	prog.setUniform("fogDark", 0.1);
 	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
 	prog.setUniform("c2", [0.45, 0.8, 0.2]);
@@ -339,7 +340,7 @@ function setTransparencyUniforms(prog, cam){
 	cam.draw(prog);
 	prog.setUniform("ambient", main.amb);
 	prog.setUniform("clipPlane", [0,0,0,0]);
-	prog.setUniform("fogDensity", 0.012);
+	prog.setUniform("fogDensity", 0.016);
 	prog.setUniform("fogDark", 0.1);
 	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
 	prog.setUniform("c2", [0.45, 0.8, 0.2]);
@@ -355,7 +356,7 @@ function setWaterUniforms(prog, cam){
     prog.setUniform("invProjMatrix", cam.inverseProjectionMatrix);
     prog.setUniform("reflection", main.reflectionFBO.texture);
     prog.setUniform("specmtl", 32);
-	prog.setUniform("fogDensity", 0.012);
+	prog.setUniform("fogDensity", 0.016);
 	prog.setUniform("fogDark", 0.1);
 	prog.setUniform("fogColor", [0.74, 0.69, 0.69]);
 	prog.setUniform("G", main.G);

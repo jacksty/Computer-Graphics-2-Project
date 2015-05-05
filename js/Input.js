@@ -10,6 +10,10 @@ function keyHandler(dtime){
 		main.showgrain = true;
 	if(main.keyDict[52] === true) //4
 		main.showgrain = false;
+	if(main.keyDict[53] === true) //5
+		main.correction = true;
+	if(main.keyDict[54] === true) //6
+		main.correction = false;
 			
 	if(main.keyDict[87] === true) //w
 		move("strafe", tdl.mul(main.cam.antilook, -d), tdl.mul(main.tank.back, -d));
