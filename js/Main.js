@@ -238,11 +238,8 @@ function update(){
 	
 	main.ufo.update(dtime);
 	
-	main.transEnt[0].alpha += 0.005 * dir;
 	main.lights[2][1][2] += 0.005 * dir;
 	main.lights[2][1][1] -= 0.01 * dir;
 	main.lights[2][1][0] += 0.005 * dir;
-	if(main.transEnt[0].alpha > 0.95 || main.transEnt[0].alpha < 0.5)
-		dir = -dir;
 }
 var dir = 1;
