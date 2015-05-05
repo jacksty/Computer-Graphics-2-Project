@@ -6,5 +6,5 @@ Skyscraper base texture (Not normal and spec maps)
 	http://cgtextures.com/
 	modified colors and tiled to meet needs
 
-UFO image taken from
-	http://cliparts.co/
+fxaa.glsl / texcoords.glsl
+	https://www.npmjs.com/package/glsl-fxaa
