@@ -43,17 +43,28 @@ Dude.prototype.computeWM = function()
 
 Dude.prototype.strafe = function(val, elapsed)
 {
+	this.correctLen();
 	var vec = tdl.mul(this.antiforward, val);
-	var tmp = tdl.mul(tdl.dot(vec, this.right), this.right);
-	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.up), this.up));
-	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.antiforward), this.antiforward));
-	var M = tdl.translation(tmp);
-	var tmpPos = tdl.mul(this.pos, M);
+	var tmpPos = tdl.add(this.pos, vec);
 	this.OBB.draw(tmpPos);
 	if (!main.grid.getCollisions(main.buildingOBB, main.dude.OBB))
 		this.pos = tmpPos;
 	else
-		this.OBB.draw(this.pos);
+	{
+		tmpPos = tdl.add(this.pos, [0, vec[1], vec[2], vec[3]]);
+		this.OBB.draw(tmpPos);
+		if (!main.grid.getCollisions(main.buildingOBB, main.dude.OBB))
+			this.pos = tmpPos;
+		else
+		{
+			tmpPos = tdl.add(this.pos, [vec[0], vec[1], 0, vec[3]]);
+			this.OBB.draw(tmpPos);
+			if (!main.grid.getCollisions(main.buildingOBB, main.dude.OBB))
+				this.pos = tmpPos;
+			else
+				this.OBB.draw(this.pos);
+		}
+	}
 	this.computeWM();
 	this.moving = true;
 	

@@ -140,7 +140,7 @@ function main(){
 	main.particleSystems = [new ParticleSystem(40), new ParticleSystem(40), new ParticleSystem(40)];
 
     main.transEnt = [
-                     new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [-8,31.5,-6,1]})
+                     //new Mesh(loader, "barrel.mesh", {alpha: 0.5, position: [-8,31.5,-6,1]})
                      ];
 					 
 	main.glowingEnt = [
