@@ -99,10 +99,13 @@ Grid.prototype.getCollisions = function(buildingOBB, dudeOBB)
 			}
 			if (!collide)
 			{
-				this.collide();
+				return true;
 			}
 			else
+			{
+				return false;
 				collide = true;
+			}
 		//}
 	//}
 }

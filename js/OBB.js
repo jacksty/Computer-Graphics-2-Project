@@ -39,9 +39,10 @@ OBB.prototype.projectToAxis = function(o, v)
 
 OBB.prototype.draw = function(matrix)
 {
-	this.p = tdl.mul(this.ap, matrix);
-	this.axes = [tdl.mul(this.aaxes[0], matrix), tdl.mul(this.aaxes[1], matrix), tdl.mul(this.aaxes[2], matrix)];
-	this.calcNormals();
+	this.p = tdl.sub(matrix, tdl.mul(0.5, this.aaxes[0]), tdl.mul(0.5, this.aaxes[1]), tdl.mul(0.5, this.aaxes[2]))
+	//this.p = tdl.mul(this.ap, matrix);
+	//this.axes = [tdl.mul(this.aaxes[0], matrix), tdl.mul(this.aaxes[1], matrix), tdl.mul(this.aaxes[2], matrix)];
+	//this.calcNormals();
 }
 
 OBB.prototype.updateCell = function(cell)

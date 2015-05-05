@@ -128,7 +128,7 @@ function main(){
 	
 	main.dude.OBB.updateCell(main.grid.put(main.dude.pos[0], main.dude.pos[2], main.dude));
 	
-	main.buildingOBB = new OBB([-6.2, 30.3, -10.8, 1], [5,0,0,0], [0,5,0,0], [0,0,5,0]);
+	main.buildingOBB = new OBB(main.dude.pos, [7.,0,0,0], [0,5,0,0], [0,0,7.,0]);
 	
     main.entities = [
 					 main.city,
@@ -234,7 +234,7 @@ function update(){
 		main.particleSystems[i].update(dtime);
 	}
 	main.dude.update(dtime);
-	main.grid.getCollisions(main.buildingOBB, main.dude.OBB);
+	
 	main.ufo.update(dtime);
 	
 	main.transEnt[0].alpha += 0.005 * dir;

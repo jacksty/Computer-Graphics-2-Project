@@ -6,7 +6,7 @@ function Dude(pos)
 	this.antiforward = [0,0,1,0];
 	this.scale = 0.2;
 	this.currframe = 0;
-	this.OBB = new OBB(this.pos, [2.038,0,0,0], [0,4.898,0,0], [0,0,1.156,0]);
+	this.OBB = new OBB(this.pos, [0.4076,0,0,0], [0,0.9796,0,0], [0,0,0.2312,0]);
 	this.computeWM();
 	this.moving = false;
 }
@@ -38,7 +38,7 @@ Dude.prototype.computeWM = function()
 	              0, 0, 0, 1];
 	var scale = tdl.scaling(this.scale, this.scale, this.scale);
 	this.worldMatrix = tdl.mul(tdl.mul(rotate, scale), translate);
-	this.OBB.draw(this.worldMatrix);
+	var tmpMatrix = tdl.mul(rotate, translate);
 }
 
 Dude.prototype.strafe = function(val, elapsed)
@@ -48,9 +48,15 @@ Dude.prototype.strafe = function(val, elapsed)
 	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.up), this.up));
 	tmp = tdl.add(tmp, tdl.mul(tdl.dot(vec, this.antiforward), this.antiforward));
 	var M = tdl.translation(tmp);
-	this.pos = tdl.mul(this.pos, M);
+	var tmpPos = tdl.mul(this.pos, M);
+	this.OBB.draw(tmpPos);
+	if (!main.grid.getCollisions(main.buildingOBB, main.dude.OBB))
+		this.pos = tmpPos;
+	else
+		this.OBB.draw(this.pos);
 	this.computeWM();
 	this.moving = true;
+	
 }
 
 Dude.prototype.turn = function(rads, elapsed)
@@ -72,6 +78,8 @@ Dude.prototype.update = function(elapsed)
 		this.currframe += elapsed * 0.12;
 		if (this.currframe > 100)
 			this.currframe -= 100;
+		
+
 	}
 	else if (this.currframe != 0)
 	{
