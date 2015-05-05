@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf-8'>
+<script src="tdl/tdl.js"></script>
+<script src="js/Tank.js"></script>
+<script src="js/UnitSquare.js"></script>
+<script src="js/Mesh.js"></script>
+<script src="js/Camera.js"></script>
+<script src="js/City.js"></script>
+<script src="js/Main.js"></script>
+<script src="js/UFO.js"></script>
+<script src="js/billboard.js"></script>
+<script src="js/HeightMap.js"></script>
+<script src="js/Skybox.js"></script>
+<script src="js/Render.js"></script>
+<script src="js/ParticleSystem.js"></script>
+<script src="js/Input.js"></script>
+<script src="js/Util.js"></script>
+<script src="js/Dude.js"></script>
+<script src="js/OBB.js"></script>
+<script src="js/Grid.js"></script>
+<style>
+html {
+    height: 100%;
+}
+
+body {
+    height: 100%;
+    margin: 0;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+	font-size: 75%;
+	font-family: Arial, Helvetica, sans-serif;
+	color: white;
+	background-color: #FFFFFF;
+	background: linear-gradient(#222222, #000000);
+}
+
+canvas#cvs {
+	border: 100px solid #111111;
+	border-left-width: 0px;
+	border-right-width: 0px;
+}
+
+div#wrapper {
+	text-align: center;
+	width: 100%;
+	position: absolute;
+	top: 60px;
+}
+
+div#tv {
+	display: inline-block;
+	border: 80px solid #555555;
+	background: #555555;
+	border-radius: 15px;
+}
+
+div#stand {
+	display: inline-block;
+	width: 100px;
+	height: 100px;
+	background: #343434;
+}
+
+div#base {
+	display: inline-block;
+	width: 350px;
+	height: 10px;
+	background: #555555;
+}
+
+</style>
+</head>
+<body onload="main();">
+<div id="wrapper">
+<div id="tv">
+<canvas id="cvs" width=1100 height=400></canvas>
+</div><br/>
+<div id="stand"></div><br/>
+<div id="base"></div>
+</div>
+</body>
+</html>
