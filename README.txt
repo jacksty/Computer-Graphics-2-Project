@@ -1,1 +1,1 @@
-Graphics 2 Project
+This was a group project for the Computer Graphics 2 course. The later versions of the project (on the master and development branches) are incompatible with modern browsers, but this branch is on an earlier commit which still runs.
